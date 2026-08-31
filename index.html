@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Property Hub – Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    body { background: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; }
+    .stat-card { background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+    .stat-card .icon { font-size: 2rem; color: #4f46e5; opacity: 0.3; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; color: #0f172a; }
+    .stat-card .label { font-size: 0.875rem; color: #64748b; }
+    .admin-tab { cursor: pointer; padding: 0.5rem 1.25rem; border-radius: 9999px; font-weight: 500; transition: 0.2s; }
+    .admin-tab.active { background: #4f46e5; color: white; }
+    .admin-tab:not(.active):hover { background: #e2e8f0; }
+    .badge-pending { background: #f59e0b; color: white; }
+    .badge-approved { background: #10b981; color: white; }
+    .badge-rejected { background: #ef4444; color: white; }
+    .badge-unverified { background: #94a3b8; color: white; }
+    .badge-verified { background: #10b981; color: white; }
+    .badge-blocked { background: #ef4444; color: white; }
+    .badge-active { background: #10b981; color: white; }
+    .section-card { background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); margin-bottom: 1.5rem; }
+    .section-card h3 { font-weight: 600; font-size: 1.125rem; margin-bottom: 1rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; font-size: 0.875rem; }
+    table th { text-align: left; padding: 0.75rem 0.5rem; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 600; }
+    table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .btn-sm { padding: 0.2rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; border: none; cursor: pointer; transition: 0.2s; }
+    .btn-sm.green { background: #10b981; color: white; }
+    .btn-sm.green:hover { background: #059669; }
+    .btn-sm.red { background: #ef4444; color: white; }
+    .btn-sm.red:hover { background: #dc2626; }
+    .btn-sm.blue { background: #3b82f6; color: white; }
+    .btn-sm.blue:hover { background: #2563eb; }
+    .btn-sm.amber { background: #f59e0b; color: white; }
+    .btn-sm.amber:hover { background: #d97706; }
+    .btn-sm.outline { background: transparent; border: 1px solid #cbd5e1; color: #475569; }
+    .btn-sm.outline:hover { background: #f1f5f9; }
+    .auth-card { max-width: 400px; margin: 4rem auto; background: white; border-radius: 2rem; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+    .auth-card h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
+    .auth-card input { width: 100%; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 1rem; margin-bottom: 1rem; outline: none; font-size: 0.875rem; }
+    .auth-card input:focus { border-color: #4f46e5; ring: 2px solid #4f46e5; }
+    .auth-card button { width: 100%; padding: 0.75rem; border-radius: 1rem; background: #4f46e5; color: white; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; }
+    .auth-card button:hover { background: #4338ca; }
+    .auth-card .error { color: #ef4444; font-size: 0.875rem; margin-top: 0.5rem; }
+    .hidden { display: none !important; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-xs { font-size: 0.75rem; }
+    .text-slate-500 { color: #64748b; }
+    .text-slate-600 { color: #475569; }
+    .text-slate-700 { color: #334155; }
+    .text-slate-800 { color: #1e293b; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    .max-w-7xl { max-width: 80rem; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; }
+    .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; }
+    @media (max-width: 768px) { .grid-4 { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 480px) { .grid-4 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center flex-col gap-4 transition-opacity duration-500">
+    <div class="loader border-4 border-slate-200 border-t-indigo-600 rounded-full w-12 h-12 animate-spin"></div>
+    <p class="text-slate-600 text-sm">Loading Admin Dashboard…</p>
+  </div>
+
+  <!-- ===== AUTH VIEW ===== -->
+  <div id="authView" class="min-h-screen flex items-center justify-center p-4">
+    <div class="auth-card">
+      <h1>🔐 Admin Login</h1>
+      <p class="text-slate-500 text-sm mb-4">Sign in with your admin account.</p>
+      <form id="loginForm">
+        <input type="email" id="adminEmail" placeholder="Email address" required />
+        <input type="password" id="adminPassword" placeholder="Password" required />
+        <button type="submit">Sign In</button>
+        <div id="loginError" class="error hidden"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN DASHBOARD ===== -->
+  <div id="dashboardView" class="hidden">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+        <div class="flex items-center gap-2">
+          <span class="text-xl font-bold text-slate-800">🏠 Property<span class="text-indigo-600">Hub</span></span>
+          <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Admin</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-slate-600" id="adminUserDisplay">Admin</span>
+          <button id="logoutBtn" class="text-sm text-red-500 hover:text-red-700 font-medium">Sign Out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Stats -->
+      <div class="grid-4" id="statsGrid">
+        <div class="stat-card"><div class="icon"><i class="fas fa-users"></i></div><div class="value" id="statBrokers">0</div><div class="label">Total Brokers</div></div>
+        <div class="stat-card"><div class="icon"><i class="fas fa-check-circle text-emerald-500"></i></div><div class="value" id="statVerified">0</div><div class="label">Verified Brokers</div></div>
+        <div class="stat-card"><div class="icon"><i class="fas fa-clock text-amber-500"></i></div><div class="value" id="statPendingVerifications">0</div><div class="label">Pending Verifications</div></div>
+        <div class="stat-card"><div class="icon"><i class="fas fa-flag text-red-500"></i></div><div class="value" id="statReports">0</div><div class="label">Total Reports</div></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex flex-wrap gap-2 mb-6">
+        <button class="admin-tab active" data-tab="verifications">Verifications</button>
+        <button class="admin-tab" data-tab="brokers">Brokers</button>
+        <button class="admin-tab" data-tab="reports">Reports</button>
+        <button class="admin-tab" data-tab="transactions">Transactions</button>
+      </div>
+
+      <!-- ===== VERIFICATIONS TAB ===== -->
+      <div id="tab-verifications" class="tab-content">
+        <div class="section-card">
+          <h3>📋 Pending Verification Requests</h3>
+          <div id="verificationList" class="table-wrap"><p class="text-slate-500 text-sm">Loading...</p></div>
+          <div id="noVerifications" class="hidden text-slate-500 text-sm py-4">No pending verification requests.</div>
+        </div>
+      </div>
+
+      <!-- ===== BROKERS TAB ===== -->
+      <div id="tab-brokers" class="tab-content hidden">
+        <div class="section-card">
+          <h3>👥 All Brokers</h3>
+          <div id="brokerList" class="table-wrap"><p class="text-slate-500 text-sm">Loading...</p></div>
+          <div id="noBrokers" class="hidden text-slate-500 text-sm py-4">No brokers found.</div>
+        </div>
+      </div>
+
+      <!-- ===== REPORTS TAB ===== -->
+      <div id="tab-reports" class="tab-content hidden">
+        <div class="section-card">
+          <h3>🚨 Reports</h3>
+          <div id="reportList" class="table-wrap"><p class="text-slate-500 text-sm">Loading...</p></div>
+          <div id="noReports" class="hidden text-slate-500 text-sm py-4">No reports found.</div>
+        </div>
+      </div>
+
+      <!-- ===== TRANSACTIONS TAB ===== -->
+      <div id="tab-transactions" class="tab-content hidden">
+        <div class="section-card">
+          <h3>💰 All Wallet Transactions</h3>
+          <div id="transactionList" class="table-wrap"><p class="text-slate-500 text-sm">Loading...</p></div>
+          <div id="noTransactions" class="hidden text-slate-500 text-sm py-4">No transactions found.</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js?v=admin1">
+  </script>
+
+  <script>
+    // ─── Config ──────────────────────────────────────────────────────
+    const SUPABASE_URL = 'https://ubkgovgoifgpazkapaxi.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia2dvdmdvaWZncGF6a2FwYXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MTExOTEsImV4cCI6MjEwMzI4NzE5MX0.upcDE6ucde7lsrPfPssWhoK54PNRDW701tkt2H4hP0A';
+
+    let supabase, currentUser;
+
+    // ─── DOM refs ──────────────────────────────────────────────────────
+    const authView = document.getElementById('authView');
+    const dashboardView = document.getElementById('dashboardView');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loginForm = document.getElementById('loginForm');
+    const adminEmail = document.getElementById('adminEmail');
+    const adminPassword = document.getElementById('adminPassword');
+    const loginError = document.getElementById('loginError');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const adminUserDisplay = document.getElementById('adminUserDisplay');
+
+    // Stats
+    const statBrokers = document.getElementById('statBrokers');
+    const statVerified = document.getElementById('statVerified');
+    const statPendingVerifications = document.getElementById('statPendingVerifications');
+    const statReports = document.getElementById('statReports');
+
+    // Tabs
+    const tabs = document.querySelectorAll('.admin-tab');
+    const tabContents = {
+      verifications: document.getElementById('tab-verifications'),
+      brokers: document.getElementById('tab-brokers'),
+      reports: document.getElementById('tab-reports'),
+      transactions: document.getElementById('tab-transactions'),
+    };
+
+    // List containers
+    const verificationList = document.getElementById('verificationList');
+    const noVerifications = document.getElementById('noVerifications');
+    const brokerList = document.getElementById('brokerList');
+    const noBrokers = document.getElementById('noBrokers');
+    const reportList = document.getElementById('reportList');
+    const noReports = document.getElementById('noReports');
+    const transactionList = document.getElementById('transactionList');
+    const noTransactions = document.getElementById('noTransactions');
+
+    // ─── Helpers ──────────────────────────────────────────────────────
+    function hideLoading() {
+      loadingOverlay.classList.add('hidden');
+    }
+
+    function showError(msg) {
+      loginError.textContent = msg;
+      loginError.classList.remove('hidden');
+    }
+
+    function formatDate(d) {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('en-UG', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function formatCurrency(amount) {
+      return Number(amount).toLocaleString('en-UG') + ' UGX';
+    }
+
+    function getBadgeClass(status) {
+      const map = {
+        'pending': 'badge-pending',
+        'approved': 'badge-approved',
+        'rejected': 'badge-rejected',
+        'verified': 'badge-verified',
+        'unverified': 'badge-unverified',
+        'blocked': 'badge-blocked',
+        'active': 'badge-active',
+        'investigating': 'badge-pending',
+        'resolved': 'badge-approved',
+        'dismissed': 'badge-rejected',
+      };
+      return map[status] || 'badge-unverified';
+    }
+
+    // ─── Wait for Supabase ──────────────────────────────────────────
+    function waitForSupabase() {
+      return new Promise((resolve) => {
+        if (window.supabase) { resolve(); return; }
+        let attempts = 0;
+        const interval = setInterval(() => {
+          attempts++;
+          if (window.supabase) { clearInterval(interval); resolve(); }
+          else if (attempts > 30) { clearInterval(interval); resolve(); }
+        }, 100);
+      });
+    }
+
+    // ─── Auth ────────────────────────────────────────────────────────
+    async function checkAdmin() {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) throw new Error('Not logged in');
+        const { data: profile, error: profError } = await supabase
+          .from('profiles')
+          .select('is_admin, business_name')
+          .eq('id', user.id)
+          .single();
+        if (profError || !profile?.is_admin) throw new Error('Not admin');
+        currentUser = user;
+        adminUserDisplay.textContent = profile.business_name || user.email;
+        return true;
+      } catch (err) {
+        console.error('Admin check failed:', err);
+        return false;
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      loginError.classList.add('hidden');
+      const email = adminEmail.value.trim();
+      const password = adminPassword.value;
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        const isAdmin = await checkAdmin();
+        if (!isAdmin) {
+          await supabase.auth.signOut();
+          showError('You do not have admin privileges.');
+          return;
+        }
+        showDashboard();
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    async function handleLogout() {
+      await supabase.auth.signOut();
+      currentUser = null;
+      showAuth();
+    }
+
+    function showAuth() {
+      authView.classList.remove('hidden');
+      dashboardView.classList.add('hidden');
+      loginForm.reset();
+      loginError.classList.add('hidden');
+    }
+
+    function showDashboard() {
+      authView.classList.add('hidden');
+      dashboardView.classList.remove('hidden');
+      loadStats();
+      loadVerifications();
+      loadBrokers();
+      loadReports();
+      loadTransactions();
+      // default tab
+      switchTab('verifications');
+    }
+
+    // ─── Tabs ──────────────────────────────────────────────────────────
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const tabName = tab.dataset.tab;
+        switchTab(tabName);
+      });
+    });
+
+    function switchTab(tabName) {
+      Object.keys(tabContents).forEach(key => {
+        tabContents[key].classList.toggle('hidden', key !== tabName);
+      });
+      // Refresh content on tab switch
+      if (tabName === 'verifications') loadVerifications();
+      else if (tabName === 'brokers') loadBrokers();
+      else if (tabName === 'reports') loadReports();
+      else if (tabName === 'transactions') loadTransactions();
+    }
+
+    // ─── Load Stats ──────────────────────────────────────────────────
+    async function loadStats() {
+      try {
+        const [brokersRes, verifiedRes, pendingVerRes, reportsRes] = await Promise.all([
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_verified', true),
+          supabase.from('verification_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+          supabase.from('reports').select('id', { count: 'exact', head: true }),
+        ]);
+        statBrokers.textContent = brokersRes.count || 0;
+        statVerified.textContent = verifiedRes.count || 0;
+        statPendingVerifications.textContent = pendingVerRes.count || 0;
+        statReports.textContent = reportsRes.count || 0;
+      } catch (err) {
+        console.error('Error loading stats:', err);
+      }
+    }
+
+    // ─── Verifications ───────────────────────────────────────────────
+    async function loadVerifications() {
+      try {
+        const { data, error } = await supabase
+          .from('verification_requests')
+          .select(`
+            *,
+            profiles:broker_id (id, business_name, email, phone)
+          `)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          verificationList.innerHTML = '';
+          noVerifications.classList.remove('hidden');
+          return;
+        }
+        noVerifications.classList.add('hidden');
+
+        let html = `<table>
+          <thead><tr>
+            <th>Broker</th>
+            <th>Reg Number</th>
+            <th>Address</th>
+            <th>Submitted</th>
+            <th>Actions</th>
+          </tr></thead><tbody>`;
+        data.forEach(req => {
+          const broker = req.profiles;
+          html += `<tr>
+            <td><div class="font-medium">${broker?.business_name || 'N/A'}</div><div class="text-xs text-slate-500">${broker?.email || ''}</div></td>
+            <td>${req.business_reg_number || '—'}</td>
+            <td>${req.business_address || '—'}</td>
+            <td>${formatDate(req.created_at)}</td>
+            <td>
+              <button class="btn-sm green approve-verif" data-id="${req.id}">Approve</button>
+              <button class="btn-sm red reject-verif" data-id="${req.id}">Reject</button>
+              ${req.id_document_url ? `<a href="${req.id_document_url}" target="_blank" class="btn-sm blue text-xs">ID</a>` : ''}
+              ${req.business_document_url ? `<a href="${req.business_document_url}" target="_blank" class="btn-sm blue text-xs">Business</a>` : ''}
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        verificationList.innerHTML = html;
+
+        // Attach events
+        verificationList.querySelectorAll('.approve-verif').forEach(btn => {
+          btn.addEventListener('click', () => handleVerification(btn.dataset.id, 'approve'));
+        });
+        verificationList.querySelectorAll('.reject-verif').forEach(btn => {
+          btn.addEventListener('click', () => handleVerification(btn.dataset.id, 'reject'));
+        });
+      } catch (err) {
+        console.error('Error loading verifications:', err);
+        verificationList.innerHTML = '<p class="text-red-500 text-sm">Error loading requests.</p>';
+      }
+    }
+
+    async function handleVerification(requestId, action) {
+      if (!confirm(`Are you sure you want to ${action} this verification request?`)) return;
+      try {
+        const { data, error } = await supabase.functions.invoke('admin-verify-broker', {
+          body: { request_id: requestId, action: action, admin_notes: `Admin ${action}d on ${new Date().toISOString()}` }
+        });
+        if (error) throw error;
+        alert(`✅ Request ${action}d successfully.`);
+        loadVerifications();
+        loadStats();
+        loadBrokers(); // refresh broker list
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ─── Brokers ─────────────────────────────────────────────────────
+    async function loadBrokers() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          brokerList.innerHTML = '';
+          noBrokers.classList.remove('hidden');
+          return;
+        }
+        noBrokers.classList.add('hidden');
+
+        let html = `<table>
+          <thead><tr>
+            <th>Business Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Verified</th>
+            <th>Blocked</th>
+            <th>Actions</th>
+          </tr></thead><tbody>`;
+        data.forEach(broker => {
+          const verifiedBadge = broker.is_verified ? 'verified' : 'unverified';
+          const blockedBadge = broker.is_blocked ? 'blocked' : 'active';
+          html += `<tr>
+            <td><div class="font-medium">${broker.business_name || 'Unnamed'}</div></td>
+            <td>${broker.email || '—'}</td>
+            <td>${broker.phone || '—'}</td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(verifiedBadge)}">${verifiedBadge}</span></td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(blockedBadge)}">${blockedBadge}</span></td>
+            <td>
+              ${!broker.is_verified ? `<button class="btn-sm green verify-broker" data-id="${broker.id}">Verify</button>` : `<button class="btn-sm amber unverify-broker" data-id="${broker.id}">Unverify</button>`}
+              ${!broker.is_blocked ? `<button class="btn-sm red block-broker" data-id="${broker.id}">Block</button>` : `<button class="btn-sm green unblock-broker" data-id="${broker.id}">Unblock</button>`}
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        brokerList.innerHTML = html;
+
+        // Attach events
+        brokerList.querySelectorAll('.verify-broker').forEach(btn => {
+          btn.addEventListener('click', () => handleBrokerAction(btn.dataset.id, 'verify'));
+        });
+        brokerList.querySelectorAll('.unverify-broker').forEach(btn => {
+          btn.addEventListener('click', () => handleBrokerAction(btn.dataset.id, 'unverify'));
+        });
+        brokerList.querySelectorAll('.block-broker').forEach(btn => {
+          btn.addEventListener('click', () => handleBrokerAction(btn.dataset.id, 'block'));
+        });
+        brokerList.querySelectorAll('.unblock-broker').forEach(btn => {
+          btn.addEventListener('click', () => handleBrokerAction(btn.dataset.id, 'unblock'));
+        });
+      } catch (err) {
+        console.error('Error loading brokers:', err);
+        brokerList.innerHTML = '<p class="text-red-500 text-sm">Error loading brokers.</p>';
+      }
+    }
+
+    async function handleBrokerAction(brokerId, action) {
+      if (!confirm(`Are you sure you want to ${action} this broker?`)) return;
+      try {
+        // We'll use a simple admin-block-broker function (if not exists, we can update directly)
+        // For simplicity, we'll just update profiles directly (admin bypasses RLS with service role)
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            is_verified: action === 'verify' ? true : action === 'unverify' ? false : undefined,
+            is_blocked: action === 'block' ? true : action === 'unblock' ? false : undefined,
+            verification_badge: action === 'verify' ? 'verified' : action === 'unverify' ? 'unverified' : undefined,
+            block_reason: action === 'block' ? 'Blocked by admin' : null,
+          })
+          .eq('id', brokerId);
+        if (error) throw error;
+        alert(`✅ Broker ${action}d successfully.`);
+        loadBrokers();
+        loadStats();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ─── Reports ─────────────────────────────────────────────────────
+    async function loadReports() {
+      try {
+        const { data, error } = await supabase
+          .from('reports')
+          .select(`
+            *,
+            reporter:reporter_id (business_name, email),
+            broker:broker_id (business_name, email)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          reportList.innerHTML = '';
+          noReports.classList.remove('hidden');
+          return;
+        }
+        noReports.classList.add('hidden');
+
+        let html = `<table>
+          <thead><tr>
+            <th>Reporter</th>
+            <th>Broker</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr></thead><tbody>`;
+        data.forEach(report => {
+          const reporterName = report.reporter?.business_name || report.reporter?.email || 'Anonymous';
+          const brokerName = report.broker?.business_name || 'Unknown';
+          html += `<tr>
+            <td>${reporterName}</td>
+            <td>${brokerName}</td>
+            <td>${report.reason}</td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(report.status)}">${report.status}</span></td>
+            <td>${formatDate(report.created_at)}</td>
+            <td>
+              ${report.status === 'pending' ? `<button class="btn-sm green resolve-report" data-id="${report.id}">Resolve</button><button class="btn-sm red dismiss-report" data-id="${report.id}">Dismiss</button>` : ''}
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        reportList.innerHTML = html;
+
+        reportList.querySelectorAll('.resolve-report').forEach(btn => {
+          btn.addEventListener('click', () => handleReport(btn.dataset.id, 'resolved'));
+        });
+        reportList.querySelectorAll('.dismiss-report').forEach(btn => {
+          btn.addEventListener('click', () => handleReport(btn.dataset.id, 'dismissed'));
+        });
+      } catch (err) {
+        console.error('Error loading reports:', err);
+        reportList.innerHTML = '<p class="text-red-500 text-sm">Error loading reports.</p>';
+      }
+    }
+
+    async function handleReport(reportId, status) {
+      if (!confirm(`Mark this report as ${status}?`)) return;
+      try {
+        const { error } = await supabase
+          .from('reports')
+          .update({
+            status: status,
+            resolved_at: new Date().toISOString(),
+            resolved_by: currentUser?.id || null,
+          })
+          .eq('id', reportId);
+        if (error) throw error;
+        alert(`✅ Report marked as ${status}.`);
+        loadReports();
+        loadStats();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ─── Transactions ────────────────────────────────────────────────
+    async function loadTransactions() {
+      try {
+        const { data, error } = await supabase
+          .from('wallet_transactions')
+          .select(`
+            *,
+            profiles:profile_id (business_name, email)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          transactionList.innerHTML = '';
+          noTransactions.classList.remove('hidden');
+          return;
+        }
+        noTransactions.classList.add('hidden');
+
+        let html = `<table>
+          <thead><tr>
+            <th>User</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Reference</th>
+            <th>Date</th>
+          </tr></thead><tbody>`;
+        data.forEach(tx => {
+          const user = tx.profiles?.business_name || tx.profiles?.email || 'Unknown';
+          const sign = tx.amount < 0 ? '' : '+';
+          const color = tx.amount < 0 ? 'text-red-500' : 'text-emerald-600';
+          html += `<tr>
+            <td>${user}</td>
+            <td class="${color} font-medium">${sign}${Number(tx.amount).toLocaleString()} UGX</td>
+            <td>${tx.type.replace('_', ' ').toUpperCase()}</td>
+            <td class="text-xs text-slate-500">${tx.reference || '—'}</td>
+            <td class="text-xs">${formatDate(tx.created_at)}</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        transactionList.innerHTML = html;
+      } catch (err) {
+        console.error('Error loading transactions:', err);
+        transactionList.innerHTML = '<p class="text-red-500 text-sm">Error loading transactions.</p>';
+      }
+    }
+
+    // ─── Init ──────────────────────────────────────────────────────────
+    async function init() {
+      await waitForSupabase();
+      if (!window.supabase) {
+        alert('Failed to load Supabase. Please refresh.');
+        return;
+      }
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // Check session
+      const isAdmin = await checkAdmin();
+      if (isAdmin) {
+        showDashboard();
+      } else {
+        showAuth();
+      }
+
+      loginForm.addEventListener('submit', handleLogin);
+      logoutBtn.addEventListener('click', handleLogout);
+
+      hideLoading();
+
+      // Auto-refresh every 30 seconds
+      setInterval(() => {
+        if (!authView.classList.contains('hidden')) return;
+        loadStats();
+        // Only refresh visible tab content
+        const activeTab = document.querySelector('.admin-tab.active');
+        if (activeTab) {
+          const tabName = activeTab.dataset.tab;
+          if (tabName === 'verifications') loadVerifications();
+          else if (tabName === 'brokers') loadBrokers();
+          else if (tabName === 'reports') loadReports();
+          else if (tabName === 'transactions') loadTransactions();
+        }
+      }, 30000);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
