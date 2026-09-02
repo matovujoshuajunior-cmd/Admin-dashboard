@@ -7,8 +7,102 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <style>
-    /* ... same CSS as before ... */
-    /* (copy the exact CSS from the previous admin.html) */
+    body { background: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; }
+    .stat-card { background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+    .stat-card .icon { font-size: 2rem; color: #4f46e5; opacity: 0.3; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; color: #0f172a; }
+    .stat-card .label { font-size: 0.875rem; color: #64748b; }
+    .admin-tab { cursor: pointer; padding: 0.5rem 1.25rem; border-radius: 9999px; font-weight: 500; transition: 0.2s; }
+    .admin-tab.active { background: #4f46e5; color: white; }
+    .admin-tab:not(.active):hover { background: #e2e8f0; }
+    .badge-pending { background: #f59e0b; color: white; }
+    .badge-approved { background: #10b981; color: white; }
+    .badge-rejected { background: #ef4444; color: white; }
+    .badge-unverified { background: #94a3b8; color: white; }
+    .badge-verified { background: #10b981; color: white; }
+    .badge-blocked { background: #ef4444; color: white; }
+    .badge-active { background: #10b981; color: white; }
+    .badge-report { background: #ef4444; color: white; }
+    .section-card { background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); margin-bottom: 1.5rem; }
+    .section-card h3 { font-weight: 600; font-size: 1.125rem; margin-bottom: 1rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; font-size: 0.875rem; }
+    table th { text-align: left; padding: 0.75rem 0.5rem; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 600; }
+    table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .btn-sm { padding: 0.2rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; border: none; cursor: pointer; transition: 0.2s; }
+    .btn-sm.green { background: #10b981; color: white; }
+    .btn-sm.green:hover { background: #059669; }
+    .btn-sm.red { background: #ef4444; color: white; }
+    .btn-sm.red:hover { background: #dc2626; }
+    .btn-sm.blue { background: #3b82f6; color: white; }
+    .btn-sm.blue:hover { background: #2563eb; }
+    .btn-sm.amber { background: #f59e0b; color: white; }
+    .btn-sm.amber:hover { background: #d97706; }
+    .btn-sm.outline { background: transparent; border: 1px solid #cbd5e1; color: #475569; }
+    .btn-sm.outline:hover { background: #f1f5f9; }
+    .btn-sm.danger { background: #dc2626; color: white; }
+    .btn-sm.danger:hover { background: #b91c1c; }
+    .auth-card { max-width: 400px; margin: 4rem auto; background: white; border-radius: 2rem; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+    .auth-card h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
+    .auth-card input { width: 100%; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 1rem; margin-bottom: 1rem; outline: none; font-size: 0.875rem; }
+    .auth-card input:focus { border-color: #4f46e5; ring: 2px solid #4f46e5; }
+    .auth-card button { width: 100%; padding: 0.75rem; border-radius: 1rem; background: #4f46e5; color: white; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; }
+    .auth-card button:hover { background: #4338ca; }
+    .auth-card .error { color: #ef4444; font-size: 0.875rem; margin-top: 0.5rem; }
+    .hidden { display: none !important; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-xs { font-size: 0.75rem; }
+    .text-slate-500 { color: #64748b; }
+    .text-slate-600 { color: #475569; }
+    .text-slate-700 { color: #334155; }
+    .text-slate-800 { color: #1e293b; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    .max-w-7xl { max-width: 80rem; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; }
+    .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; }
+    .profile-header { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
+    .profile-avatar { width: 60px; height: 60px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #475569; }
+    .profile-info h2 { font-size: 1.25rem; font-weight: 700; }
+    .profile-info .sub { font-size: 0.875rem; color: #64748b; }
+    .back-btn { cursor: pointer; color: #4f46e5; font-weight: 500; margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .back-btn:hover { color: #4338ca; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .detail-card { background: #f8fafc; border-radius: 1rem; padding: 1rem; }
+    .detail-card .label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .detail-card .value { font-size: 1.25rem; font-weight: 600; color: #0f172a; }
+    @media (max-width: 768px) {
+      .grid-4 { grid-template-columns: repeat(2,1fr); }
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) { .grid-4 { grid-template-columns: 1fr; } }
+    .tab-content { display: block; }
+    .tab-content.hidden { display: none; }
+    .detail-section { margin-top: 1.5rem; }
+    .detail-section h4 { font-weight: 600; margin-bottom: 0.5rem; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.hidden { display: none; }
+    .modal-content {
+      background: white; border-radius: 2rem; max-width: 600px; width: 100%;
+      max-height: 90vh; overflow-y: auto; padding: 2rem;
+    }
+    .detail-field { margin-bottom: 0.75rem; }
+    .detail-field .label { font-weight: 600; color: #1e293b; font-size: 0.875rem; display: block; }
+    .detail-field .value { color: #475569; word-break: break-all; }
+    .detail-field .value a { color: #4f46e5; text-decoration: underline; }
+    .detail-field .value a:hover { color: #4338ca; }
   </style>
 </head>
 <body>
@@ -159,7 +253,6 @@
     let supabase, currentUser;
 
     // ─── DOM refs ──────────────────────────────────────────────────────
-    // (same as before)
     const authView = document.getElementById('authView');
     const dashboardView = document.getElementById('dashboardView');
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -176,13 +269,6 @@
     const statReports = document.getElementById('statReports');
 
     const tabs = document.querySelectorAll('.admin-tab');
-    const tabContents = {
-      brokers: document.getElementById('tab-brokers'),
-      'property-verifications': document.getElementById('tab-property-verifications'),
-      reports: document.getElementById('tab-reports'),
-      transactions: document.getElementById('tab-transactions'),
-    };
-
     const brokerList = document.getElementById('brokerList');
     const noBrokers = document.getElementById('noBrokers');
     const propertyVerificationList = document.getElementById('propertyVerificationList');
@@ -192,6 +278,7 @@
     const transactionList = document.getElementById('transactionList');
     const noTransactions = document.getElementById('noTransactions');
 
+    // Broker detail
     const brokerDetailView = document.getElementById('brokerDetailView');
     const backToBrokerList = document.getElementById('backToBrokerList');
     const detailBusinessName = document.getElementById('detailBusinessName');
@@ -311,33 +398,34 @@
     function showDashboard() {
       authView.classList.add('hidden');
       dashboardView.classList.remove('hidden');
+      // Load all data immediately
       loadStats();
       loadBrokers();
-      loadPropertyVerifications(); // <-- call this
+      loadPropertyVerifications();
       loadReports();
       loadTransactions();
-      switchTab('brokers');
+      // Set active tab (default: brokers)
+      document.querySelector('.admin-tab.active')?.click();
     }
 
     // ─── Tabs ──────────────────────────────────────────────────────────
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        switchTab(tab.dataset.tab);
+    function setupTabs() {
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          const tabName = this.dataset.tab;
+          // Hide all tab contents
+          document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+          const target = document.getElementById(`tab-${tabName}`);
+          if (target) target.classList.remove('hidden');
+          // Load data for the selected tab
+          if (tabName === 'property-verifications') loadPropertyVerifications();
+          else if (tabName === 'brokers') loadBrokers();
+          else if (tabName === 'reports') loadReports();
+          else if (tabName === 'transactions') loadTransactions();
+        });
       });
-    });
-
-    function switchTab(tabName) {
-      Object.keys(tabContents).forEach(key => {
-        if (tabContents[key]) {
-          tabContents[key].classList.toggle('hidden', key !== tabName);
-        }
-      });
-      if (tabName === 'property-verifications') loadPropertyVerifications();
-      else if (tabName === 'brokers') loadBrokers();
-      else if (tabName === 'reports') loadReports();
-      else if (tabName === 'transactions') loadTransactions();
     }
 
     // ─── Load Stats ──────────────────────────────────────────────────
@@ -357,27 +445,278 @@
     }
 
     // ─── Brokers ──────────────────────────────────────────────────────
-    // (same as previous – copy the full loadBrokers, handleBrokerAction, showBrokerDetail)
-    // To keep the answer not too long, I'll include only the critical parts.
-    // But for completeness, I'll provide the full functions in the final code.
-
-    // ─── Property Verifications (with debug logging) ────────────────
-    async function loadPropertyVerifications() {
-      console.log('loadPropertyVerifications called');
+    async function loadBrokers() {
       try {
-        // First, check if the table exists by selecting count
-        const { count, error: countError } = await supabase
-          .from('property_verification_requests')
-          .select('*', { count: 'exact', head: true });
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-        if (countError) {
-          console.error('Error checking table:', countError);
-          propertyVerificationList.innerHTML = `<p class="text-red-500 text-sm">Error: ${countError.message}</p>`;
-          noPropertyVerifications.classList.add('hidden');
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          brokerList.innerHTML = '';
+          noBrokers.classList.remove('hidden');
           return;
         }
-        console.log('Total verification requests:', count);
+        noBrokers.classList.add('hidden');
 
+        let html = `<table><thead><tr><th>Business Name</th><th>Email</th><th>Phone</th><th>Verified</th><th>Blocked</th><th>Actions</th></tr></thead><tbody>`;
+        data.forEach(broker => {
+          const verifiedBadge = broker.is_verified ? 'verified' : 'unverified';
+          const blockedBadge = broker.is_blocked ? 'blocked' : 'active';
+          html += `<tr>
+            <td><div class="font-medium">${broker.business_name || 'Unnamed'}</div></td>
+            <td>${broker.email || '—'}</td>
+            <td>${broker.phone || '—'}</td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(verifiedBadge)}">${verifiedBadge}</span></td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(blockedBadge)}">${blockedBadge}</span></td>
+            <td>
+              <button class="btn-sm blue view-broker" data-id="${broker.id}">View</button>
+              ${!broker.is_verified ? `<button class="btn-sm green verify-broker" data-id="${broker.id}">Verify</button>` : `<button class="btn-sm amber unverify-broker" data-id="${broker.id}">Unverify</button>`}
+              ${!broker.is_blocked ? `<button class="btn-sm red block-broker" data-id="${broker.id}">Block</button>` : `<button class="btn-sm green unblock-broker" data-id="${broker.id}">Unblock</button>`}
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        brokerList.innerHTML = html;
+
+        brokerList.querySelectorAll('.view-broker').forEach(btn => {
+          btn.addEventListener('click', () => showBrokerDetail(btn.dataset.id));
+        });
+        brokerList.querySelectorAll('.verify-broker, .unverify-broker, .block-broker, .unblock-broker').forEach(btn => {
+          const action = btn.classList.contains('verify-broker') ? 'verify' :
+                         btn.classList.contains('unverify-broker') ? 'unverify' :
+                         btn.classList.contains('block-broker') ? 'block' : 'unblock';
+          btn.addEventListener('click', () => handleBrokerAction(btn.dataset.id, action));
+        });
+      } catch (err) {
+        console.error('Error loading brokers:', err);
+        brokerList.innerHTML = '<p class="text-red-500 text-sm">Error loading brokers.</p>';
+      }
+    }
+
+    async function handleBrokerAction(brokerId, action) {
+      if (!confirm(`Are you sure you want to ${action} this broker?`)) return;
+      try {
+        const updates = {
+          is_verified: action === 'verify' ? true : action === 'unverify' ? false : undefined,
+          is_blocked: action === 'block' ? true : action === 'unblock' ? false : undefined,
+          block_reason: action === 'block' ? 'Blocked by admin' : null,
+        };
+        const { error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', brokerId);
+        if (error) throw error;
+        alert(`✅ Broker ${action}d successfully.`);
+        loadBrokers();
+        loadStats();
+        if (!brokerDetailView.classList.contains('hidden')) {
+          showBrokerDetail(brokerId);
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ─── Broker Detail View ──────────────────────────────────────────
+    async function showBrokerDetail(brokerId) {
+      document.getElementById('tab-brokers').classList.add('hidden');
+      brokerDetailView.classList.remove('hidden');
+
+      try {
+        const { data: broker, error: bErr } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', brokerId)
+          .single();
+        if (bErr) throw bErr;
+
+        detailBusinessName.textContent = broker.business_name || 'Unnamed Broker';
+        detailEmail.textContent = `Email: ${broker.email || '—'}`;
+        detailPhone.textContent = `Phone: ${broker.phone || '—'}`;
+
+        const statusBadge = broker.is_blocked ? 'blocked' : 'active';
+        detailStatus.innerHTML = `<span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(statusBadge)}">${statusBadge}</span>`;
+        const verBadge = broker.is_verified ? 'verified' : 'unverified';
+        detailVerification.innerHTML = `<span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(verBadge)}">${verBadge}</span>`;
+        detailPropertyCount.textContent = '...';
+        detailWalletBalance.textContent = formatCurrency(broker.wallet_balance || 0);
+        detailLeadScore.textContent = broker.lead_score || 0;
+        detailAvgRating.textContent = `${broker.average_rating || 0} ⭐`;
+
+        // Actions
+        detailActions.innerHTML = `
+          ${!broker.is_verified ? `<button class="btn-sm green verify-broker-detail" data-id="${broker.id}">Verify Broker</button>` : `<button class="btn-sm amber unverify-broker-detail" data-id="${broker.id}">Unverify</button>`}
+          ${!broker.is_blocked ? `<button class="btn-sm red block-broker-detail" data-id="${broker.id}">Block</button>` : `<button class="btn-sm green unblock-broker-detail" data-id="${broker.id}">Unblock</button>`}
+        `;
+        detailActions.querySelectorAll('button').forEach(btn => {
+          const action = btn.classList.contains('verify-broker-detail') ? 'verify' :
+                         btn.classList.contains('unverify-broker-detail') ? 'unverify' :
+                         btn.classList.contains('block-broker-detail') ? 'block' : 'unblock';
+          btn.addEventListener('click', async () => {
+            await handleBrokerAction(broker.id, action);
+            showBrokerDetail(broker.id);
+          });
+        });
+
+        // Properties
+        const { data: props, error: pErr } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('owner_id', broker.id)
+          .order('created_at', { ascending: false });
+
+        if (pErr) throw pErr;
+        detailPropertyCount.textContent = props?.length || 0;
+
+        if (props && props.length > 0) {
+          let pHtml = `<table><thead><tr><th>Title</th><th>Price</th><th>Type</th><th>Address</th><th>Verified</th><th>Status</th></tr></thead><tbody>`;
+          props.forEach(p => {
+            const ver = p.is_verified ? '✅ Verified' : (p.verification_status === 'pending' ? '⏳ Pending' : '❌ Unverified');
+            pHtml += `<tr>
+              <td>${p.title || 'Untitled'}</td>
+              <td>${formatCurrency(p.price_amount || 0)}</td>
+              <td>${p.property_type || '—'}</td>
+              <td>${p.address || '—'}</td>
+              <td>${ver}</td>
+              <td>${p.verification_status || 'unverified'}</td>
+            </tr>`;
+          });
+          pHtml += '</tbody></table>';
+          detailProperties.innerHTML = pHtml;
+        } else {
+          detailProperties.innerHTML = '<p class="text-slate-500 text-sm">No properties listed.</p>';
+        }
+
+        // Leads – gracefully handle missing table
+        try {
+          const { data: leads, error: lErr } = await supabase
+            .from('lead_requests')
+            .select('*')
+            .eq('broker_id', broker.id)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+          if (lErr && lErr.code === '42P01') throw new Error('Table not found');
+          if (lErr) throw lErr;
+
+          if (leads && leads.length > 0) {
+            let lHtml = `<table><thead><tr><th>Visitor</th><th>Type</th><th>Cost</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
+            leads.forEach(lead => {
+              lHtml += `<tr>
+                <td>${lead.visitor_name || '—'}</td>
+                <td><span class="text-xs px-2 py-0.5 rounded-full ${lead.lead_type === 'hot' ? 'bg-red-100 text-red-700' : lead.lead_type === 'warm' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}">${lead.lead_type || '—'}</span></td>
+                <td>${formatCurrency(lead.calculated_cost || 0)}</td>
+                <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(lead.status)}">${lead.status}</span></td>
+                <td>${formatDate(lead.created_at)}</td>
+              </tr>`;
+            });
+            lHtml += '</tbody></table>';
+            detailLeads.innerHTML = lHtml;
+          } else {
+            detailLeads.innerHTML = '<p class="text-slate-500 text-sm">No lead requests.</p>';
+          }
+        } catch (e) {
+          detailLeads.innerHTML = '<p class="text-slate-500 text-sm">Lead requests table not set up yet.</p>';
+        }
+
+        // Reviews
+        const { data: reviews, error: rvErr } = await supabase
+          .from('reviews')
+          .select('*')
+          .eq('broker_id', broker.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (rvErr) throw rvErr;
+        if (reviews && reviews.length > 0) {
+          let rHtml = `<table><thead><tr><th>Rating</th><th>Review</th><th>Date</th></tr></thead><tbody>`;
+          reviews.forEach(rev => {
+            rHtml += `<tr>
+              <td>${renderStars(rev.rating)}</td>
+              <td>${rev.comment || '—'}</td>
+              <td>${formatDate(rev.created_at)}</td>
+            </tr>`;
+          });
+          rHtml += '</tbody></table>';
+          detailReviews.innerHTML = rHtml;
+        } else {
+          detailReviews.innerHTML = '<p class="text-slate-500 text-sm">No reviews.</p>';
+        }
+
+        // Reports against
+        const { data: reportsAgainst, error: raErr } = await supabase
+          .from('reports')
+          .select('*')
+          .eq('broker_id', broker.id)
+          .order('created_at', { ascending: false });
+
+        if (raErr) throw raErr;
+        if (reportsAgainst && reportsAgainst.length > 0) {
+          let raHtml = `<table><thead><tr><th>Reason</th><th>Description</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
+          reportsAgainst.forEach(rp => {
+            raHtml += `<tr>
+              <td>${rp.reason}</td>
+              <td>${rp.description || '—'}</td>
+              <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(rp.status)}">${rp.status}</span></td>
+              <td>${formatDate(rp.created_at)}</td>
+            </tr>`;
+          });
+          raHtml += '</tbody></table>';
+          detailReports.innerHTML = raHtml;
+        } else {
+          detailReports.innerHTML = '<p class="text-slate-500 text-sm">No reports against this broker.</p>';
+        }
+
+        // Transactions
+        try {
+          const { data: txs, error: txErr } = await supabase
+            .from('wallet_transactions')
+            .select('*')
+            .eq('profile_id', broker.id)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+          if (txErr && txErr.code === '42P01') throw new Error('Table not found');
+          if (txErr) throw txErr;
+
+          if (txs && txs.length > 0) {
+            let txHtml = `<table><thead><tr><th>Amount</th><th>Type</th><th>Date</th></tr></thead><tbody>`;
+            txs.forEach(tx => {
+              const sign = tx.amount < 0 ? '' : '+';
+              const color = tx.amount < 0 ? 'text-red-500' : 'text-emerald-600';
+              txHtml += `<tr>
+                <td class="${color} font-medium">${sign}${Number(tx.amount).toLocaleString()} UGX</td>
+                <td>${tx.type.replace('_', ' ').toUpperCase()}</td>
+                <td>${formatDate(tx.created_at)}</td>
+              </tr>`;
+            });
+            txHtml += '</tbody></table>';
+            detailTransactions.innerHTML = txHtml;
+          } else {
+            detailTransactions.innerHTML = '<p class="text-slate-500 text-sm">No transactions.</p>';
+          }
+        } catch (e) {
+          detailTransactions.innerHTML = '<p class="text-slate-500 text-sm">Transactions table not set up yet.</p>';
+        }
+
+      } catch (err) {
+        console.error('Error loading broker detail:', err);
+        brokerDetailView.innerHTML = '<p class="text-red-500 text-sm">Error loading broker details.</p>';
+      }
+    }
+
+    backToBrokerList.addEventListener('click', () => {
+      brokerDetailView.classList.add('hidden');
+      document.getElementById('tab-brokers').classList.remove('hidden');
+      loadBrokers();
+    });
+
+    // ─── Property Verifications ──────────────────────────────────────
+    async function loadPropertyVerifications() {
+      try {
         const { data, error } = await supabase
           .from('property_verification_requests')
           .select(`
@@ -388,14 +727,7 @@
           .eq('status', 'pending')
           .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Error fetching verifications:', error);
-          propertyVerificationList.innerHTML = `<p class="text-red-500 text-sm">Error loading requests: ${error.message}</p>`;
-          noPropertyVerifications.classList.add('hidden');
-          return;
-        }
-
-        console.log('Fetched data:', data);
+        if (error) throw error;
 
         if (!data || data.length === 0) {
           propertyVerificationList.innerHTML = '';
@@ -436,7 +768,7 @@
         html += '</tbody></table>';
         propertyVerificationList.innerHTML = html;
 
-        // ─── View Details handler ────────────────────────────────────
+        // ─── View Details handler (opens modal) ────────────────────
         propertyVerificationList.querySelectorAll('.view-details').forEach(btn => {
           btn.addEventListener('click', async function() {
             const reqId = this.dataset.id;
@@ -480,12 +812,11 @@
         });
 
       } catch (err) {
-        console.error('Unexpected error in loadPropertyVerifications:', err);
-        propertyVerificationList.innerHTML = `<p class="text-red-500 text-sm">Unexpected error: ${err.message}</p>`;
+        console.error('Error loading property verifications:', err);
+        propertyVerificationList.innerHTML = '<p class="text-red-500 text-sm">Error loading requests.</p>';
       }
     }
 
-    // ─── handlePropertyVerification ──────────────────────────────────
     async function handlePropertyVerification(requestId, propertyId, status) {
       if (!confirm(`Are you sure you want to ${status} this property verification?`)) return;
       try {
@@ -530,28 +861,141 @@
       }
     });
 
-    // ─── Reports and Transactions ────────────────────────────────────
-    // (same as previous – include full functions)
-    // For brevity, I'll assume they are the same as before.
+    // ─── Reports ─────────────────────────────────────────────────────
+    async function loadReports() {
+      try {
+        const { data, error } = await supabase
+          .from('reports')
+          .select(`*, reporter:reporter_id (business_name, email), broker:broker_id (business_name, email)`)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          reportList.innerHTML = '';
+          noReports.classList.remove('hidden');
+          return;
+        }
+        noReports.classList.add('hidden');
+
+        let html = `<table><thead><tr><th>Reporter</th><th>Broker</th><th>Reason</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>`;
+        data.forEach(report => {
+          const reporterName = report.reporter?.business_name || report.reporter?.email || 'Anonymous';
+          const brokerName = report.broker?.business_name || 'Unknown';
+          html += `<tr>
+            <td>${reporterName}</td>
+            <td>${brokerName}</td>
+            <td>${report.reason}</td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(report.status)}">${report.status}</span></td>
+            <td>${formatDate(report.created_at)}</td>
+            <td>
+              ${report.status === 'pending' ? `<button class="btn-sm green resolve-report" data-id="${report.id}">Resolve</button><button class="btn-sm red dismiss-report" data-id="${report.id}">Dismiss</button>` : ''}
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        reportList.innerHTML = html;
+
+        reportList.querySelectorAll('.resolve-report, .dismiss-report').forEach(btn => {
+          const action = btn.classList.contains('resolve-report') ? 'resolved' : 'dismissed';
+          btn.addEventListener('click', () => handleReport(btn.dataset.id, action));
+        });
+      } catch (err) {
+        console.error('Error loading reports:', err);
+        reportList.innerHTML = '<p class="text-red-500 text-sm">Error loading reports.</p>';
+      }
+    }
+
+    async function handleReport(reportId, status) {
+      if (!confirm(`Mark this report as ${status}?`)) return;
+      try {
+        const { error } = await supabase
+          .from('reports')
+          .update({ status: status, resolved_at: new Date().toISOString(), resolved_by: currentUser?.id || null })
+          .eq('id', reportId);
+        if (error) throw error;
+        alert(`✅ Report marked as ${status}.`);
+        loadReports();
+        loadStats();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ─── Transactions ────────────────────────────────────────────────
+    async function loadTransactions() {
+      try {
+        const { data, error } = await supabase
+          .from('wallet_transactions')
+          .select(`*, profiles:profile_id (business_name, email)`)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (error && error.code === '42P01') {
+          transactionList.innerHTML = '<p class="text-slate-500 text-sm">Transactions table not set up yet.</p>';
+          noTransactions.classList.add('hidden');
+          return;
+        }
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          transactionList.innerHTML = '';
+          noTransactions.classList.remove('hidden');
+          return;
+        }
+        noTransactions.classList.add('hidden');
+
+        let html = `<table><thead><tr><th>User</th><th>Amount</th><th>Type</th><th>Reference</th><th>Date</th></tr></thead><tbody>`;
+        data.forEach(tx => {
+          const user = tx.profiles?.business_name || tx.profiles?.email || 'Unknown';
+          const sign = tx.amount < 0 ? '' : '+';
+          const color = tx.amount < 0 ? 'text-red-500' : 'text-emerald-600';
+          html += `<tr>
+            <td>${user}</td>
+            <td class="${color} font-medium">${sign}${Number(tx.amount).toLocaleString()} UGX</td>
+            <td>${tx.type.replace('_', ' ').toUpperCase()}</td>
+            <td class="text-xs text-slate-500">${tx.reference || '—'}</td>
+            <td class="text-xs">${formatDate(tx.created_at)}</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        transactionList.innerHTML = html;
+      } catch (err) {
+        console.error('Error loading transactions:', err);
+        transactionList.innerHTML = '<p class="text-red-500 text-sm">Error loading transactions.</p>';
+      }
+    }
 
     // ─── Init ──────────────────────────────────────────────────────────
     async function init() {
+      console.log('🚀 Admin dashboard initializing...');
       await waitForSupabase();
       if (!window.supabase) {
         alert('Failed to load Supabase. Please refresh.');
         return;
       }
       supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log('✅ Supabase client created');
+
+      // Setup tabs first
+      setupTabs();
 
       const isAdmin = await checkAdmin();
-      if (isAdmin) showDashboard();
-      else showAuth();
+      if (isAdmin) {
+        console.log('✅ Admin logged in');
+        showDashboard();
+      } else {
+        console.log('🔐 Showing login');
+        showAuth();
+      }
 
       loginForm.addEventListener('submit', handleLogin);
       logoutBtn.addEventListener('click', handleLogout);
 
       hideLoading();
+      console.log('✅ Admin dashboard ready');
 
+      // Auto-refresh every 30 seconds
       setInterval(() => {
         if (!authView.classList.contains('hidden')) return;
         loadStats();
