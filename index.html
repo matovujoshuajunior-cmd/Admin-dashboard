@@ -564,30 +564,36 @@
           detailProperties.innerHTML = '<p class="text-slate-500 text-sm">No properties listed.</p>';
         }
 
-        // Leads
-        const { data: leads, error: lErr } = await supabase
-          .from('lead_requests')
-          .select('*')
-          .eq('broker_id', broker.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
+        // Leads – gracefully handle missing table
+        try {
+          const { data: leads, error: lErr } = await supabase
+            .from('lead_requests')
+            .select('*')
+            .eq('broker_id', broker.id)
+            .order('created_at', { ascending: false })
+            .limit(20);
 
-        if (lErr) throw lErr;
-        if (leads && leads.length > 0) {
-          let lHtml = `<table><thead><tr><th>Visitor</th><th>Type</th><th>Cost</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
-          leads.forEach(lead => {
-            lHtml += `<tr>
-              <td>${lead.visitor_name || '—'}</td>
-              <td><span class="text-xs px-2 py-0.5 rounded-full ${lead.lead_type === 'hot' ? 'bg-red-100 text-red-700' : lead.lead_type === 'warm' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}">${lead.lead_type || '—'}</span></td>
-              <td>${formatCurrency(lead.calculated_cost || 0)}</td>
-              <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(lead.status)}">${lead.status}</span></td>
-              <td>${formatDate(lead.created_at)}</td>
-            </tr>`;
-          });
-          lHtml += '</tbody></table>';
-          detailLeads.innerHTML = lHtml;
-        } else {
-          detailLeads.innerHTML = '<p class="text-slate-500 text-sm">No lead requests.</p>';
+          if (lErr && lErr.code === '42P01') throw new Error('Table not found');
+          if (lErr) throw lErr;
+
+          if (leads && leads.length > 0) {
+            let lHtml = `<table><thead><tr><th>Visitor</th><th>Type</th><th>Cost</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
+            leads.forEach(lead => {
+              lHtml += `<tr>
+                <td>${lead.visitor_name || '—'}</td>
+                <td><span class="text-xs px-2 py-0.5 rounded-full ${lead.lead_type === 'hot' ? 'bg-red-100 text-red-700' : lead.lead_type === 'warm' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}">${lead.lead_type || '—'}</span></td>
+                <td>${formatCurrency(lead.calculated_cost || 0)}</td>
+                <td><span class="text-xs px-2 py-0.5 rounded-full ${getBadgeClass(lead.status)}">${lead.status}</span></td>
+                <td>${formatDate(lead.created_at)}</td>
+              </tr>`;
+            });
+            lHtml += '</tbody></table>';
+            detailLeads.innerHTML = lHtml;
+          } else {
+            detailLeads.innerHTML = '<p class="text-slate-500 text-sm">No lead requests.</p>';
+          }
+        } catch (e) {
+          detailLeads.innerHTML = '<p class="text-slate-500 text-sm">Lead requests table not set up yet.</p>';
         }
 
         // Reviews
@@ -639,29 +645,35 @@
         }
 
         // Transactions
-        const { data: txs, error: txErr } = await supabase
-          .from('wallet_transactions')
-          .select('*')
-          .eq('profile_id', broker.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
+        try {
+          const { data: txs, error: txErr } = await supabase
+            .from('wallet_transactions')
+            .select('*')
+            .eq('profile_id', broker.id)
+            .order('created_at', { ascending: false })
+            .limit(20);
 
-        if (txErr) throw txErr;
-        if (txs && txs.length > 0) {
-          let txHtml = `<table><thead><tr><th>Amount</th><th>Type</th><th>Date</th></tr></thead><tbody>`;
-          txs.forEach(tx => {
-            const sign = tx.amount < 0 ? '' : '+';
-            const color = tx.amount < 0 ? 'text-red-500' : 'text-emerald-600';
-            txHtml += `<tr>
-              <td class="${color} font-medium">${sign}${Number(tx.amount).toLocaleString()} UGX</td>
-              <td>${tx.type.replace('_', ' ').toUpperCase()}</td>
-              <td>${formatDate(tx.created_at)}</td>
-            </tr>`;
-          });
-          txHtml += '</tbody></table>';
-          detailTransactions.innerHTML = txHtml;
-        } else {
-          detailTransactions.innerHTML = '<p class="text-slate-500 text-sm">No transactions.</p>';
+          if (txErr && txErr.code === '42P01') throw new Error('Table not found');
+          if (txErr) throw txErr;
+
+          if (txs && txs.length > 0) {
+            let txHtml = `<table><thead><tr><th>Amount</th><th>Type</th><th>Date</th></tr></thead><tbody>`;
+            txs.forEach(tx => {
+              const sign = tx.amount < 0 ? '' : '+';
+              const color = tx.amount < 0 ? 'text-red-500' : 'text-emerald-600';
+              txHtml += `<tr>
+                <td class="${color} font-medium">${sign}${Number(tx.amount).toLocaleString()} UGX</td>
+                <td>${tx.type.replace('_', ' ').toUpperCase()}</td>
+                <td>${formatDate(tx.created_at)}</td>
+              </tr>`;
+            });
+            txHtml += '</tbody></table>';
+            detailTransactions.innerHTML = txHtml;
+          } else {
+            detailTransactions.innerHTML = '<p class="text-slate-500 text-sm">No transactions.</p>';
+          }
+        } catch (e) {
+          detailTransactions.innerHTML = '<p class="text-slate-500 text-sm">Transactions table not set up yet.</p>';
         }
 
       } catch (err) {
@@ -730,7 +742,6 @@
         html += '</tbody></table>';
         propertyVerificationList.innerHTML = html;
 
-        // View Details handler
         propertyVerificationList.querySelectorAll('.view-details').forEach(btn => {
           btn.addEventListener('click', async function() {
             const reqId = this.dataset.id;
@@ -749,7 +760,6 @@
           });
         });
 
-        // Approve/Reject handlers
         propertyVerificationList.querySelectorAll('.approve-prop').forEach(btn => {
           btn.addEventListener('click', () => handlePropertyVerification(btn.dataset.id, btn.dataset.prop, 'approved'));
         });
@@ -766,7 +776,6 @@
     async function handlePropertyVerification(requestId, propertyId, status) {
       if (!confirm(`Are you sure you want to ${status} this property verification?`)) return;
       try {
-        // Update request status
         const { error: reqError } = await supabase
           .from('property_verification_requests')
           .update({
@@ -777,13 +786,11 @@
           .eq('id', requestId);
         if (reqError) throw reqError;
 
-        // If approved, update property
         if (status === 'approved' && propertyId) {
-          const { error: propError } = await supabase
+          await supabase
             .from('properties')
             .update({ is_verified: true, verification_status: 'approved' })
             .eq('id', propertyId);
-          if (propError) throw propError;
         } else if (status === 'rejected' && propertyId) {
           await supabase
             .from('properties')
@@ -794,7 +801,7 @@
         alert(`✅ Verification ${status}.`);
         loadPropertyVerifications();
         loadStats();
-        loadBrokers(); // refresh broker list
+        loadBrokers();
       } catch (err) {
         alert('Error: ' + err.message);
       }
@@ -870,6 +877,11 @@
           .order('created_at', { ascending: false })
           .limit(100);
 
+        if (error && error.code === '42P01') {
+          transactionList.innerHTML = '<p class="text-slate-500 text-sm">Transactions table not set up yet.</p>';
+          noTransactions.classList.add('hidden');
+          return;
+        }
         if (error) throw error;
 
         if (!data || data.length === 0) {
@@ -918,7 +930,6 @@
 
       hideLoading();
 
-      // Auto-refresh every 30 seconds
       setInterval(() => {
         if (!authView.classList.contains('hidden')) return;
         loadStats();
