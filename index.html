@@ -59,22 +59,28 @@
     .tab-content.hidden { display: none; }
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
     .modal-backdrop.hidden { display: none; }
-    .modal-content { background: white; border-radius: 2rem; max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; }
-    .detail-field { margin-bottom: 0.75rem; }
-    .detail-field .label { font-weight: 600; color: #1e293b; font-size: 0.875rem; display: block; }
-    .detail-field .value { color: #475569; word-break: break-all; }
+    .modal-content { background: white; border-radius: 2rem; max-width: 720px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; }
+    .detail-field { margin-bottom: 0.85rem; padding-bottom: 0.6rem; border-bottom: 1px solid #f1f5f9; }
+    .detail-field:last-child { border-bottom: none; }
+    .detail-field .label { font-weight: 600; color: #1e293b; font-size: 0.8rem; display: block; text-transform: uppercase; letter-spacing: 0.03em; }
+    .detail-field .value { color: #475569; word-break: break-word; font-size: 0.9rem; }
+    .detail-field .value a { color: #4f46e5; text-decoration: underline; }
     .settings-input { width: 100%; padding: 0.6rem 1rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; font-size: 0.875rem; }
     #detailContent img { transition: transform 0.2s; }
     #detailContent img:hover { transform: scale(1.02); }
+    .spinner { border: 3px solid #e2e8f0; border-top: 3px solid #4f46e5; border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; margin: 2rem auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-  <div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center flex-col gap-4 transition-opacity duration-500">
-    <div class="loader border-4 border-slate-200 border-t-indigo-600 rounded-full w-12 h-12 animate-spin"></div>
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center flex-col gap-4">
+    <div class="spinner" style="width:48px;height:48px;border-width:4px;"></div>
     <p class="text-slate-600 text-sm">Loading Admin Dashboard…</p>
   </div>
 
+  <!-- Auth -->
   <div id="authView" class="min-h-screen flex items-center justify-center p-4">
     <div class="auth-card">
       <h1>🔐 Admin Login</h1>
@@ -88,6 +94,7 @@
     </div>
   </div>
 
+  <!-- Dashboard -->
   <div id="dashboardView" class="hidden">
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 flex justify-between items-center h-16">
@@ -103,13 +110,15 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-8">
-      <div class="grid-4 mb-6" id="statsGrid">
+      <!-- Stats -->
+      <div class="grid-4 mb-6">
         <div class="stat-card"><div class="icon"><i class="fas fa-users"></i></div><div class="value" id="statBrokers">0</div><div class="label">Total Brokers</div></div>
         <div class="stat-card"><div class="icon"><i class="fas fa-home text-indigo-500"></i></div><div class="value" id="statProperties">0</div><div class="label">Total Properties</div></div>
         <div class="stat-card"><div class="icon"><i class="fas fa-clock text-amber-500"></i></div><div class="value" id="statPendingVerifications">0</div><div class="label">Pending Verifications</div></div>
         <div class="stat-card"><div class="icon"><i class="fas fa-handshake text-emerald-500"></i></div><div class="value" id="statLeads">0</div><div class="label">Active Leads</div></div>
       </div>
 
+      <!-- Tabs -->
       <div class="flex flex-wrap gap-2 mb-6">
         <button class="admin-tab active" data-tab="brokers">Brokers</button>
         <button class="admin-tab" data-tab="property-verifications">Verifications</button>
@@ -119,7 +128,7 @@
         <button class="admin-tab" data-tab="settings">⚙️ Settings</button>
       </div>
 
-      <!-- BROKERS TAB -->
+      <!-- BROKERS -->
       <div id="tab-brokers" class="tab-content">
         <div class="section-card">
           <h3>👥 All Brokers</h3>
@@ -132,34 +141,32 @@
       <div id="brokerDetailView" class="hidden">
         <div class="section-card">
           <button class="back-btn" id="backToBrokerList"><i class="fas fa-arrow-left"></i> Back to Brokers</button>
-          <div id="brokerDetailContent">
-            <div class="profile-header">
-              <div class="profile-avatar"><i class="fas fa-user"></i></div>
-              <div>
-                <h2 id="detailBusinessName" class="text-xl font-bold">Loading...</h2>
-                <div class="text-sm text-slate-500" id="detailEmail">Email: —</div>
-                <div class="text-sm text-slate-500" id="detailPhone">Phone: —</div>
-              </div>
-              <div class="ml-auto flex gap-2 flex-wrap" id="detailActions"></div>
+          <div class="profile-header">
+            <div class="profile-avatar"><i class="fas fa-user"></i></div>
+            <div>
+              <h2 id="detailBusinessName" class="text-xl font-bold">Loading...</h2>
+              <div class="text-sm text-slate-500" id="detailEmail">Email: —</div>
+              <div class="text-sm text-slate-500" id="detailPhone">Phone: —</div>
             </div>
-            <div class="detail-grid">
-              <div class="detail-card"><div class="label">Status</div><div class="value" id="detailStatus">—</div></div>
-              <div class="detail-card"><div class="label">Verification</div><div class="value" id="detailVerification">—</div></div>
-              <div class="detail-card"><div class="label">Properties</div><div class="value" id="detailPropertyCount">0</div></div>
-              <div class="detail-card"><div class="label">Wallet</div><div class="value" id="detailWalletBalance">0 UGX</div></div>
-              <div class="detail-card"><div class="label">Lead Score</div><div class="value" id="detailLeadScore">0</div></div>
-              <div class="detail-card"><div class="label">Avg Rating</div><div class="value" id="detailAvgRating">0.0 ⭐</div></div>
-            </div>
-            <div class="mt-6"><h4 class="font-semibold mb-2">📋 Properties</h4><div id="detailProperties" class="table-wrap"></div></div>
-            <div class="mt-6"><h4 class="font-semibold mb-2">📨 Lead Requests</h4><div id="detailLeads" class="table-wrap"></div></div>
-            <div class="mt-6"><h4 class="font-semibold mb-2">⭐ Reviews</h4><div id="detailReviews" class="table-wrap"></div></div>
-            <div class="mt-6"><h4 class="font-semibold mb-2">🚨 Reports Against</h4><div id="detailReports" class="table-wrap"></div></div>
-            <div class="mt-6"><h4 class="font-semibold mb-2">💰 Transactions</h4><div id="detailTransactions" class="table-wrap"></div></div>
+            <div class="ml-auto flex gap-2 flex-wrap" id="detailActions"></div>
           </div>
+          <div class="detail-grid">
+            <div class="detail-card"><div class="label">Status</div><div class="value" id="detailStatus">—</div></div>
+            <div class="detail-card"><div class="label">Verification</div><div class="value" id="detailVerification">—</div></div>
+            <div class="detail-card"><div class="label">Properties</div><div class="value" id="detailPropertyCount">0</div></div>
+            <div class="detail-card"><div class="label">Wallet</div><div class="value" id="detailWalletBalance">0 UGX</div></div>
+            <div class="detail-card"><div class="label">Lead Score</div><div class="value" id="detailLeadScore">0</div></div>
+            <div class="detail-card"><div class="label">Avg Rating</div><div class="value" id="detailAvgRating">0.0 ⭐</div></div>
+          </div>
+          <div class="mt-6"><h4 class="font-semibold mb-2">📋 Properties</h4><div id="detailProperties" class="table-wrap"></div></div>
+          <div class="mt-6"><h4 class="font-semibold mb-2">📨 Lead Requests</h4><div id="detailLeads" class="table-wrap"></div></div>
+          <div class="mt-6"><h4 class="font-semibold mb-2">⭐ Reviews</h4><div id="detailReviews" class="table-wrap"></div></div>
+          <div class="mt-6"><h4 class="font-semibold mb-2">🚨 Reports Against</h4><div id="detailReports" class="table-wrap"></div></div>
+          <div class="mt-6"><h4 class="font-semibold mb-2">💰 Transactions</h4><div id="detailTransactions" class="table-wrap"></div></div>
         </div>
       </div>
 
-      <!-- VERIFICATIONS TAB -->
+      <!-- VERIFICATIONS -->
       <div id="tab-property-verifications" class="tab-content hidden">
         <div class="section-card">
           <h3>🏠 Pending Property Verifications</h3>
@@ -168,7 +175,7 @@
         </div>
       </div>
 
-      <!-- LEADS TAB -->
+      <!-- LEADS -->
       <div id="tab-leads" class="tab-content hidden">
         <div class="section-card">
           <div class="flex-between mb-4">
@@ -189,7 +196,7 @@
         </div>
       </div>
 
-      <!-- REPORTS TAB -->
+      <!-- REPORTS -->
       <div id="tab-reports" class="tab-content hidden">
         <div class="section-card">
           <h3>🚨 All Reports</h3>
@@ -198,7 +205,7 @@
         </div>
       </div>
 
-      <!-- TRANSACTIONS TAB -->
+      <!-- TRANSACTIONS -->
       <div id="tab-transactions" class="tab-content hidden">
         <div class="section-card">
           <h3>💰 All Wallet Transactions</h3>
@@ -207,7 +214,7 @@
         </div>
       </div>
 
-      <!-- SETTINGS TAB -->
+      <!-- SETTINGS -->
       <div id="tab-settings" class="tab-content hidden">
         <div class="section-card">
           <h3>⚙️ Platform Settings</h3>
@@ -236,13 +243,14 @@
     </main>
   </div>
 
+  <!-- Verification detail modal -->
   <div id="verificationDetailModal" class="modal-backdrop hidden">
     <div class="modal-content">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-slate-800">📄 Verification Details</h2>
         <button id="closeDetailModal" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
       </div>
-      <div id="detailContent" class="space-y-2"><p class="text-slate-500 text-sm">Loading...</p></div>
+      <div id="detailContent"><div class="spinner"></div></div>
     </div>
   </div>
 
@@ -258,11 +266,13 @@
     const dashboardView = document.getElementById('dashboardView');
     const loadingOverlay = document.getElementById('loadingOverlay');
 
+    // ─── Helpers ───
     function hideLoading() { loadingOverlay.classList.add('hidden'); }
     function showError(msg) { const el = document.getElementById('loginError'); el.textContent = msg; el.classList.remove('hidden'); }
     function formatDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-UG', { day: 'numeric', month: 'short', year: 'numeric' }); }
     function formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('en-UG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
     function formatCurrency(a) { return Number(a || 0).toLocaleString('en-UG') + ' UGX'; }
+    function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function badge(status) {
       const map = {
         pending:'badge-pending', approved:'badge-approved', rejected:'badge-rejected',
@@ -271,7 +281,12 @@
       };
       return map[status] || 'badge-unverified';
     }
-    function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function isImageUrl(v) {
+      return typeof v === 'string' &&
+        (/res\.cloudinary\.com/.test(v) ||
+         /\.(jpg|jpeg|png|webp|gif|bmp|svg)(\?.*)?$/i.test(v));
+    }
+    function isUrl(v) { return typeof v === 'string' && /^https?:\/\//.test(v); }
 
     async function waitForSupabase() {
       return new Promise(resolve => {
@@ -280,7 +295,7 @@
       });
     }
 
-    // ─── AUTH ───
+    // ─── Auth ───
     async function checkAdmin() {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
@@ -313,10 +328,9 @@
       authView.classList.add('hidden'); dashboardView.classList.remove('hidden');
       loadStats(); loadBrokers(); loadPropertyVerifications(); loadReports(); loadTransactions();
       loadLeads(); loadSettings();
-      document.querySelector('.admin-tab.active')?.click();
     }
 
-    // ─── TABS ───
+    // ─── Tabs ───
     function setupTabs() {
       document.querySelectorAll('.admin-tab').forEach(tab => {
         tab.addEventListener('click', function() {
@@ -335,7 +349,7 @@
       });
     }
 
-    // ─── STATS ───
+    // ─── Stats ───
     async function loadStats() {
       try {
         const [b, p, pv, l] = await Promise.all([
@@ -351,7 +365,7 @@
       } catch (e) { console.error(e); }
     }
 
-    // ─── BROKERS ───
+    // ─── Brokers list ───
     async function loadBrokers() {
       const box = document.getElementById('brokerList');
       const no = document.getElementById('noBrokers');
@@ -400,7 +414,7 @@
       } catch (e) { alert('Error: ' + e.message); }
     }
 
-    // ─── BROKER DETAIL ───
+    // ─── Broker detail ───
     async function showBrokerDetail(id) {
       document.getElementById('tab-brokers').classList.add('hidden');
       document.getElementById('brokerDetailView').classList.remove('hidden');
@@ -460,159 +474,181 @@
       loadBrokers();
     });
 
-    // ─── PROPERTY VERIFICATIONS ───
-   async function openVerificationDetail(reqId) {
-  try {
-    // 1. Fetch the verification request alone
-    const { data: req, error: reqErr } = await supabase
-      .from('property_verification_requests')
-      .select('*')
-      .eq('id', reqId)
-      .single();
+    // ─── Property Verifications ───
+    async function loadPropertyVerifications() {
+      const box = document.getElementById('propertyVerificationList');
+      const no = document.getElementById('noPropertyVerifications');
+      try {
+        const { data: reqs, error } = await supabase
+          .from('property_verification_requests')
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
 
-    if (reqErr) {
-      console.error('Verification fetch error:', reqErr);
-      alert('Could not load details: ' + reqErr.message);
-      return;
-    }
-    if (!req) { alert('Verification request not found.'); return; }
+        if (!reqs?.length) { box.innerHTML = ''; no.classList.remove('hidden'); return; }
+        no.classList.add('hidden');
 
-    // 2. Fetch property separately (no join)
-    let property = null;
-    if (req.property_id) {
-      const { data: p, error: pErr } = await supabase
-        .from('properties')
-        .select('title, address, media_urls')
-        .eq('id', req.property_id)
-        .single();
-      if (pErr) console.warn('Property fetch warn:', pErr.message);
-      property = p;
-    }
+        // Fetch related properties and brokers separately (avoids PostgREST join issues)
+        const propIds = [...new Set(reqs.map(r => r.property_id).filter(Boolean))];
+        const brokerIds = [...new Set(reqs.map(r => r.broker_id).filter(Boolean))];
 
-    // 3. Render
-    const isImage = (v) =>
-      typeof v === 'string' &&
-      (/res\.cloudinary\.com/.test(v) ||
-       /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(v));
-    const isUrl = (v) => typeof v === 'string' && /^https?:\/\//.test(v);
-
-    let h = `
-      <div class="detail-field"><span class="label">Property:</span> <span class="value">${esc(property?.title || '—')}</span></div>
-      <div class="detail-field"><span class="label">Address:</span> <span class="value">${esc(property?.address || '—')}</span></div>
-      <div class="detail-field"><span class="label">Status:</span> <span class="value">${esc(req.status || '—')}</span></div>
-      <div class="detail-field"><span class="label">Fee paid:</span> <span class="value">${req.fee_paid ? formatCurrency(req.fee_amount) + ' (paid)' : 'Not paid'}</span></div>
-      <div class="detail-field"><span class="label">Submitted:</span> <span class="value">${formatDateTime(req.created_at)}</span></div>
-      <hr class="my-3"/>
-      <h4 class="font-semibold mb-2">📋 Submitted Data</h4>
-    `;
-
-    // Property images first
-    const propImgs = Array.isArray(property?.media_urls) ? property.media_urls : [];
-    if (propImgs.length) {
-      h += `<div class="detail-field"><span class="label">Property Images:</span><div class="mt-1">`;
-      propImgs.forEach(url => {
-        h += `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="property" style="max-width:180px; border-radius:0.5rem; margin:0.25rem; display:inline-block; border:1px solid #e2e8f0;"/></a>`;
-      });
-      h += `</div></div>`;
-    }
-
-    const data = req.submitted_data || {};
-    const keys = Object.keys(data);
-    if (keys.length === 0) {
-      h += `<p class="text-slate-500 text-sm">No submitted data attached.</p>`;
-    } else {
-      keys.forEach(k => {
-        const v = data[k];
-        const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
-        let display;
-        if (isImage(v)) {
-          display = `
-            <div class="mt-1">
-              <a href="${v}" target="_blank" rel="noopener">
-                <img src="${v}" alt="${esc(label)}" style="max-width:100%; max-height:280px; border-radius:0.75rem; border:1px solid #e2e8f0; cursor:zoom-in; display:block;"/>
-              </a>
-              <a href="${v}" target="_blank" rel="noopener" class="text-xs text-indigo-600 underline mt-1 inline-block">Open full size ↗</a>
-            </div>`;
-        } else if (isUrl(v)) {
-          display = `<a href="${v}" target="_blank" rel="noopener" class="text-indigo-600 underline break-all">${esc(v)}</a>`;
-        } else if (Array.isArray(v)) {
-          display = v.map(item => isImage(item)
-            ? `<a href="${item}" target="_blank" rel="noopener"><img src="${item}" style="max-width:180px; border-radius:0.5rem; margin:0.25rem; display:inline-block; border:1px solid #e2e8f0;"/></a>`
-            : esc(item)).join(' ');
-        } else {
-          display = esc(v || '—');
+        let propMap = {}, brokerMap = {};
+        if (propIds.length) {
+          const { data: props } = await supabase.from('properties').select('id, title, address, property_type').in('id', propIds);
+          (props || []).forEach(p => { propMap[p.id] = p; });
         }
-        h += `<div class="detail-field"><span class="label">${esc(label)}:</span><span class="value">${display}</span></div>`;
-      });
-    }
+        if (brokerIds.length) {
+          const { data: brokers } = await supabase.from('profiles').select('id, business_name, email, phone').in('id', brokerIds);
+          (brokers || []).forEach(b => { brokerMap[b.id] = b; });
+        }
 
-    document.getElementById('detailContent').innerHTML = h;
-    document.getElementById('verificationDetailModal').classList.remove('hidden');
-  } catch (err) {
-    console.error('openVerificationDetail fatal:', err);
-    alert('Unexpected error: ' + err.message);
-  }
-}
-
-    // ─── Verification Detail Modal with inline Cloudinary images ───
-    async function openVerificationDetail(reqId) {
-      const { data: req, error } = await supabase
-        .from('property_verification_requests')
-        .select('submitted_data, created_at, status, fee_amount, fee_paid, property:property_id (title,address,media_urls)')
-        .eq('id', reqId).single();
-      if (error || !req) { alert('Could not load details.'); return; }
-
-      const isImage = (v) =>
-        typeof v === 'string' &&
-        (/res\.cloudinary\.com/.test(v) ||
-         /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(v));
-      const isUrl = (v) => typeof v === 'string' && /^https?:\/\//.test(v);
-
-      let h = `
-        <div class="detail-field"><span class="label">Property:</span> <span class="value">${esc(req.property?.title || '—')}</span></div>
-        <div class="detail-field"><span class="label">Address:</span> <span class="value">${esc(req.property?.address || '—')}</span></div>
-        <div class="detail-field"><span class="label">Status:</span> <span class="value">${esc(req.status)}</span></div>
-        <div class="detail-field"><span class="label">Fee paid:</span> <span class="value">${req.fee_paid ? formatCurrency(req.fee_amount) + ' (paid)' : 'Not paid'}</span></div>
-        <div class="detail-field"><span class="label">Submitted:</span> <span class="value">${formatDateTime(req.created_at)}</span></div>
-        <hr class="my-3"/>
-        <h4 class="font-semibold mb-2">📋 Submitted Data</h4>
-      `;
-
-      // If property has its own images, show them first
-      const propImgs = Array.isArray(req.property?.media_urls) ? req.property.media_urls : [];
-      if (propImgs.length) {
-        h += `<div class="detail-field"><span class="label">Property Images:</span><div class="mt-1">`;
-        propImgs.forEach(url => {
-          h += `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="property" style="max-width:180px; border-radius:0.5rem; margin:0.25rem; display:inline-block; border:1px solid #e2e8f0;"/></a>`;
+        let html = `<table><thead><tr><th>Property</th><th>Broker</th><th>Type</th><th>Fee paid</th><th>Actions</th></tr></thead><tbody>`;
+        reqs.forEach(r => {
+          const prop = propMap[r.property_id] || {};
+          const broker = brokerMap[r.broker_id] || {};
+          html += `<tr>
+            <td><div class="font-medium">${esc(prop.title || 'Unknown')}</div><div class="text-xs text-slate-500">${esc(prop.address || '')}</div></td>
+            <td>${esc(broker.business_name || 'Unknown')}</td>
+            <td>${esc(prop.property_type || '—')}</td>
+            <td>${r.fee_paid ? '✅ ' + formatCurrency(r.fee_amount) : '❌'}</td>
+            <td>
+              <button class="btn-sm blue view-details" data-id="${r.id}">View</button>
+              <button class="btn-sm green approve-prop" data-id="${r.id}" data-prop="${r.property_id}">Approve</button>
+              <button class="btn-sm red reject-prop" data-id="${r.id}" data-prop="${r.property_id}">Reject</button>
+            </td></tr>`;
         });
-        h += `</div></div>`;
+        html += '</tbody></table>';
+        box.innerHTML = html;
+
+        box.querySelectorAll('.view-details').forEach(x => x.onclick = () => openVerificationDetail(x.dataset.id));
+        box.querySelectorAll('.approve-prop').forEach(x => x.onclick = () => handlePropertyVerification(x.dataset.id, x.dataset.prop, 'approved'));
+        box.querySelectorAll('.reject-prop').forEach(x => x.onclick = () => handlePropertyVerification(x.dataset.id, x.dataset.prop, 'rejected'));
+      } catch (e) {
+        console.error('loadPropertyVerifications:', e);
+        box.innerHTML = '<p class="text-red-500 text-sm">Error: ' + esc(e.message) + '</p>';
       }
+    }
 
-      Object.entries(req.submitted_data || {}).forEach(([k, v]) => {
-        const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
-        let display;
-        if (isImage(v)) {
-          display = `
-            <div class="mt-1">
-              <a href="${v}" target="_blank" rel="noopener">
-                <img src="${v}" alt="${esc(label)}" style="max-width:100%; max-height:280px; border-radius:0.75rem; border:1px solid #e2e8f0; cursor:zoom-in; display:block;"/>
-              </a>
-              <a href="${v}" target="_blank" rel="noopener" class="text-xs text-indigo-600 underline mt-1 inline-block">Open full size ↗</a>
-            </div>`;
-        } else if (isUrl(v)) {
-          display = `<a href="${v}" target="_blank" rel="noopener" class="text-indigo-600 underline break-all">${esc(v)}</a>`;
-        } else if (Array.isArray(v)) {
-          display = v.map(item => isImage(item)
-            ? `<a href="${item}" target="_blank" rel="noopener"><img src="${item}" style="max-width:180px; border-radius:0.5rem; margin:0.25rem; display:inline-block; border:1px solid #e2e8f0;"/></a>`
-            : esc(item)).join(' ');
-        } else {
-          display = esc(v || '—');
+    // ─── Verification detail modal (NO JOIN — uses separate queries) ───
+    async function openVerificationDetail(reqId) {
+      const modal = document.getElementById('verificationDetailModal');
+      const content = document.getElementById('detailContent');
+      content.innerHTML = '<div class="spinner"></div>';
+      modal.classList.remove('hidden');
+
+      try {
+        // 1. Fetch verification request alone
+        const { data: req, error: reqErr } = await supabase
+          .from('property_verification_requests')
+          .select('*')
+          .eq('id', reqId)
+          .single();
+
+        if (reqErr) {
+          console.error('Verification fetch error:', reqErr);
+          content.innerHTML = `<p class="text-red-500 text-sm">Could not load: ${esc(reqErr.message)}</p>`;
+          return;
         }
-        h += `<div class="detail-field"><span class="label">${esc(label)}:</span><span class="value">${display}</span></div>`;
-      });
+        if (!req) {
+          content.innerHTML = '<p class="text-red-500 text-sm">Request not found.</p>';
+          return;
+        }
 
-      document.getElementById('detailContent').innerHTML = h;
-      document.getElementById('verificationDetailModal').classList.remove('hidden');
+        // 2. Fetch property separately
+        let property = null;
+        if (req.property_id) {
+          const { data: p, error: pErr } = await supabase
+            .from('properties')
+            .select('title, address, property_type, media_urls')
+            .eq('id', req.property_id)
+            .maybeSingle();
+          if (pErr) console.warn('Property fetch warn:', pErr.message);
+          property = p;
+        }
+
+        // 3. Fetch broker separately
+        let broker = null;
+        if (req.broker_id) {
+          const { data: b, error: bErr } = await supabase
+            .from('profiles')
+            .select('business_name, email, phone')
+            .eq('id', req.broker_id)
+            .maybeSingle();
+          if (bErr) console.warn('Broker fetch warn:', bErr.message);
+          broker = b;
+        }
+
+        // 4. Render
+        let h = `
+          <div class="detail-field"><span class="label">Property</span><span class="value">${esc(property?.title || '—')}</span></div>
+          <div class="detail-field"><span class="label">Address</span><span class="value">${esc(property?.address || '—')}</span></div>
+          <div class="detail-field"><span class="label">Broker</span><span class="value">${esc(broker?.business_name || '—')}</span></div>
+          <div class="detail-field"><span class="label">Broker Contact</span><span class="value">${esc(broker?.phone || '—')} · ${esc(broker?.email || '—')}</span></div>
+          <div class="detail-field"><span class="label">Status</span><span class="value">${esc(req.status)}</span></div>
+          <div class="detail-field"><span class="label">Fee Paid</span><span class="value">${req.fee_paid ? '✅ ' + formatCurrency(req.fee_amount) : '❌ Not paid'}</span></div>
+          <div class="detail-field"><span class="label">Submitted</span><span class="value">${formatDateTime(req.created_at)}</span></div>
+        `;
+
+        // Property images
+        const propImgs = Array.isArray(property?.media_urls)
+          ? property.media_urls
+          : (property?.media_urls ? [property.media_urls] : []);
+        if (propImgs.length) {
+          h += `<div class="detail-field"><span class="label">Property Images (${propImgs.length})</span><div class="value" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.4rem;">`;
+          propImgs.forEach(url => {
+            h += `<a href="${esc(url)}" target="_blank" rel="noopener">
+                    <img src="${esc(url)}" alt="property" style="width:130px; height:100px; object-fit:cover; border-radius:0.6rem; border:1px solid #e2e8f0;"/>
+                  </a>`;
+          });
+          h += `</div></div>`;
+        }
+
+        // Submitted data
+        const data = req.submitted_data || {};
+        const keys = Object.keys(data);
+        h += `<h4 class="font-semibold mt-4 mb-2 text-slate-800">📋 Submitted Verification Data</h4>`;
+        if (keys.length === 0) {
+          h += `<p class="text-slate-500 text-sm">No additional data provided.</p>`;
+        } else {
+          keys.forEach(k => {
+            const v = data[k];
+            const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
+            let display = '';
+
+            if (isImageUrl(v)) {
+              display = `<div style="margin-top:0.5rem;">
+                <a href="${esc(v)}" target="_blank" rel="noopener">
+                  <img src="${esc(v)}" alt="${esc(label)}" style="max-width:100%; max-height:320px; border-radius:0.75rem; border:1px solid #e2e8f0; display:block;"/>
+                </a>
+                <a href="${esc(v)}" target="_blank" rel="noopener" style="font-size:0.75rem; color:#4f46e5; text-decoration:underline; margin-top:0.3rem; display:inline-block;">Open full size ↗</a>
+              </div>`;
+            } else if (Array.isArray(v)) {
+              display = v.map(item => {
+                if (isImageUrl(item)) {
+                  return `<a href="${esc(item)}" target="_blank" rel="noopener" style="display:inline-block;margin:0.25rem;">
+                            <img src="${esc(item)}" style="width:130px;height:100px;object-fit:cover;border-radius:0.6rem;border:1px solid #e2e8f0;"/>
+                          </a>`;
+                } else if (isUrl(item)) {
+                  return `<a href="${esc(item)}" target="_blank" rel="noopener" style="color:#4f46e5;text-decoration:underline;">${esc(item)}</a>`;
+                }
+                return esc(item);
+              }).join(' ');
+            } else if (isUrl(v)) {
+              display = `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>`;
+            } else {
+              display = esc(v || '—');
+            }
+
+            h += `<div class="detail-field"><span class="label">${esc(label)}</span><span class="value">${display}</span></div>`;
+          });
+        }
+
+        content.innerHTML = h;
+      } catch (err) {
+        console.error('openVerificationDetail fatal:', err);
+        content.innerHTML = `<p class="text-red-500 text-sm">Unexpected error: ${esc(err.message)}</p>`;
+      }
     }
 
     async function handlePropertyVerification(reqId, propId, status) {
@@ -622,6 +658,7 @@
           status, reviewed_at: new Date().toISOString(), reviewed_by: currentUser.id
         }).eq('id', reqId);
         if (error) throw error;
+
         if (propId) {
           const { error: pErr } = await supabase.from('properties').update({
             is_verified: status === 'approved',
@@ -629,32 +666,44 @@
           }).eq('id', propId);
           if (pErr) throw pErr;
         }
+
         alert(`✅ Verification ${status}.`);
         loadPropertyVerifications(); loadStats();
       } catch (e) { alert('Error: ' + e.message); }
     }
 
-    // ─── LEADS ───
+    // ─── Leads ───
     async function loadLeads() {
       const box = document.getElementById('leadsList');
       const no = document.getElementById('noLeads');
       try {
-        let q = supabase.from('lead_requests')
-          .select(`*, property:property_id (title), broker:broker_id (business_name)`)
-          .order('created_at', { ascending: false });
+        let q = supabase.from('lead_requests').select('*').order('created_at', { ascending: false });
         if (leadFilter) q = q.eq('status', leadFilter);
         const { data, error } = await q;
         if (error) throw error;
         if (!data?.length) { box.innerHTML = ''; no.classList.remove('hidden'); return; }
         no.classList.add('hidden');
 
+        // Fetch properties + brokers separately to avoid joins
+        const propIds = [...new Set(data.map(l => l.property_id).filter(Boolean))];
+        const brokerIds = [...new Set(data.map(l => l.broker_id).filter(Boolean))];
+        let propMap = {}, brokerMap = {};
+        if (propIds.length) {
+          const { data: props } = await supabase.from('properties').select('id, title').in('id', propIds);
+          (props || []).forEach(p => { propMap[p.id] = p; });
+        }
+        if (brokerIds.length) {
+          const { data: brokers } = await supabase.from('profiles').select('id, business_name').in('id', brokerIds);
+          (brokers || []).forEach(b => { brokerMap[b.id] = b; });
+        }
+
         let html = `<table><thead><tr><th>Property</th><th>Broker</th><th>Visitor</th><th>Type</th><th>Cost</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>`;
         data.forEach(l => {
           const age = Math.floor((Date.now() - new Date(l.created_at).getTime()) / 86400000);
           const ageClass = age >= 30 ? 'text-red-600 font-bold' : age >= 25 ? 'text-amber-600' : 'text-slate-500';
           html += `<tr>
-            <td>${esc(l.property?.title || '—')}</td>
-            <td>${esc(l.broker?.business_name || '—')}</td>
+            <td>${esc(propMap[l.property_id]?.title || '—')}</td>
+            <td>${esc(brokerMap[l.broker_id]?.business_name || '—')}</td>
             <td>${esc(l.visitor_name || '—')}</td>
             <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(l.lead_type)}">${esc(l.lead_type||'—')}</span></td>
             <td>${formatCurrency(l.cost || 0)}</td>
@@ -671,14 +720,14 @@
           if (error) return alert('Error: ' + error.message);
           loadLeads(); loadStats();
         });
-      } catch (e) { box.innerHTML = '<p class="text-red-500 text-sm">Error loading leads.</p>'; }
+      } catch (e) { console.error(e); box.innerHTML = '<p class="text-red-500 text-sm">Error loading leads.</p>'; }
     }
 
     document.getElementById('leadStatusFilter').addEventListener('change', e => {
       leadFilter = e.target.value; loadLeads();
     });
 
-    // ─── 30-DAY CLEANUP ───
+    // ─── Cleanup ───
     async function runCleanup() {
       if (!confirm('Permanently delete all approved & rejected leads older than 30 days?\n\nThis cannot be undone.')) return;
       const banner = document.getElementById('cleanupBanner');
@@ -709,22 +758,31 @@
       } catch (e) { st.textContent = '❌ ' + e.message; st.className = 'mt-3 text-sm text-red-600'; }
     });
 
-    // ─── REPORTS ───
+    // ─── Reports ───
     async function loadReports() {
       const box = document.getElementById('reportList');
       const no = document.getElementById('noReports');
       try {
-        const { data, error } = await supabase.from('reports')
-          .select(`*, reporter:reporter_id (business_name,email), broker:broker_id (business_name,email)`)
-          .order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
         if (error) throw error;
         if (!data?.length) { box.innerHTML = ''; no.classList.remove('hidden'); return; }
         no.classList.add('hidden');
+
+        // Fetch reporter + broker separately
+        const ids = [...new Set([...data.map(r => r.reporter_id), ...data.map(r => r.broker_id)].filter(Boolean))];
+        let pMap = {};
+        if (ids.length) {
+          const { data: profiles } = await supabase.from('profiles').select('id, business_name, email').in('id', ids);
+          (profiles || []).forEach(p => { pMap[p.id] = p; });
+        }
+
         let html = `<table><thead><tr><th>Reporter</th><th>Broker</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>`;
         data.forEach(r => {
+          const reporter = pMap[r.reporter_id];
+          const broker = pMap[r.broker_id];
           html += `<tr>
-            <td>${esc(r.reporter?.business_name || r.reporter?.email || 'Anonymous')}</td>
-            <td>${esc(r.broker?.business_name || 'Unknown')}</td>
+            <td>${esc(reporter?.business_name || reporter?.email || r.reporter_name || 'Anonymous')}</td>
+            <td>${esc(broker?.business_name || 'Unknown')}</td>
             <td>${esc(r.reason)}</td>
             <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(r.status)}">${esc(r.status)}</span></td>
             <td>${formatDate(r.created_at)}</td>
@@ -742,26 +800,34 @@
             loadReports(); loadStats();
           };
         });
-      } catch (e) { box.innerHTML = '<p class="text-red-500 text-sm">Error loading reports.</p>'; }
+      } catch (e) { console.error(e); box.innerHTML = '<p class="text-red-500 text-sm">Error loading reports.</p>'; }
     }
 
-    // ─── TRANSACTIONS ───
+    // ─── Transactions ───
     async function loadTransactions() {
       const box = document.getElementById('transactionList');
       const no = document.getElementById('noTransactions');
       try {
-        const { data, error } = await supabase.from('wallet_transactions')
-          .select(`*, profiles:profile_id (business_name,email)`)
-          .order('created_at', { ascending: false }).limit(100);
+        const { data, error } = await supabase.from('wallet_transactions').select('*').order('created_at', { ascending: false }).limit(100);
         if (error && error.code === '42P01') { box.innerHTML = '<p class="text-slate-500 text-sm">Table not set up yet.</p>'; no.classList.add('hidden'); return; }
         if (error) throw error;
         if (!data?.length) { box.innerHTML = ''; no.classList.remove('hidden'); return; }
         no.classList.add('hidden');
+
+        // Fetch profiles separately
+        const ids = [...new Set(data.map(t => t.profile_id).filter(Boolean))];
+        let pMap = {};
+        if (ids.length) {
+          const { data: profiles } = await supabase.from('profiles').select('id, business_name, email').in('id', ids);
+          (profiles || []).forEach(p => { pMap[p.id] = p; });
+        }
+
         let html = `<table><thead><tr><th>User</th><th>Amount</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
         data.forEach(t => {
+          const u = pMap[t.profile_id];
           const color = t.amount < 0 ? 'text-red-500' : 'text-emerald-600';
           html += `<tr>
-            <td>${esc(t.profiles?.business_name || t.profiles?.email || 'Unknown')}</td>
+            <td>${esc(u?.business_name || u?.email || 'Unknown')}</td>
             <td class="${color} font-medium">${t.amount < 0 ? '' : '+'}${Number(t.amount).toLocaleString()} UGX</td>
             <td>${esc((t.type||'').replace('_',' ').toUpperCase())}</td>
             <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(t.status || 'active')}">${esc(t.status || '—')}</span></td>
@@ -773,7 +839,7 @@
       } catch (e) { box.innerHTML = '<p class="text-red-500 text-sm">Error loading transactions.</p>'; }
     }
 
-    // ─── SETTINGS ───
+    // ─── Settings ───
     async function loadSettings() {
       try {
         const { data, error } = await supabase.from('platform_settings').select('key,value');
@@ -808,7 +874,7 @@
       if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
     });
 
-    // ─── INIT ───
+    // ─── Init ───
     async function init() {
       await waitForSupabase();
       if (!window.supabase) { alert('Supabase failed to load.'); return; }
@@ -819,6 +885,7 @@
       document.getElementById('logoutBtn').addEventListener('click', handleLogout);
       hideLoading();
 
+      // Auto-refresh every 30s
       setInterval(() => {
         if (!authView.classList.contains('hidden')) return;
         loadStats();
