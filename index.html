@@ -36,7 +36,6 @@
     .btn-sm.red { background: #ef4444; color: white; } .btn-sm.red:hover { background: #dc2626; }
     .btn-sm.blue { background: #3b82f6; color: white; } .btn-sm.blue:hover { background: #2563eb; }
     .btn-sm.amber { background: #f59e0b; color: white; } .btn-sm.amber:hover { background: #d97706; }
-    .btn-sm.outline { background: transparent; border: 1px solid #cbd5e1; color: #475569; }
     .btn-sm.danger { background: #dc2626; color: white; }
     .btn-sm.danger:hover { background: #b91c1c; }
     .auth-card { max-width: 400px; margin: 4rem auto; background: white; border-radius: 2rem; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
@@ -60,13 +59,13 @@
     .tab-content.hidden { display: none; }
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
     .modal-backdrop.hidden { display: none; }
-    .modal-content { background: white; border-radius: 2rem; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; }
+    .modal-content { background: white; border-radius: 2rem; max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; }
     .detail-field { margin-bottom: 0.75rem; }
     .detail-field .label { font-weight: 600; color: #1e293b; font-size: 0.875rem; display: block; }
     .detail-field .value { color: #475569; word-break: break-all; }
     .settings-input { width: 100%; padding: 0.6rem 1rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; font-size: 0.875rem; }
-    .filter-chip { padding: 0.3rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; border: 1px solid #e2e8f0; cursor: pointer; background: white; }
-    .filter-chip.active { background: #1e293b; color: white; border-color: #1e293b; }
+    #detailContent img { transition: transform 0.2s; }
+    #detailContent img:hover { transform: scale(1.02); }
   </style>
 </head>
 <body>
@@ -113,7 +112,6 @@
 
       <div class="flex flex-wrap gap-2 mb-6">
         <button class="admin-tab active" data-tab="brokers">Brokers</button>
-        <button class="admin-tab" data-tab="properties">Properties</button>
         <button class="admin-tab" data-tab="property-verifications">Verifications</button>
         <button class="admin-tab" data-tab="leads">Leads</button>
         <button class="admin-tab" data-tab="reports">Reports</button>
@@ -158,24 +156,6 @@
             <div class="mt-6"><h4 class="font-semibold mb-2">🚨 Reports Against</h4><div id="detailReports" class="table-wrap"></div></div>
             <div class="mt-6"><h4 class="font-semibold mb-2">💰 Transactions</h4><div id="detailTransactions" class="table-wrap"></div></div>
           </div>
-        </div>
-      </div>
-
-      <!-- PROPERTIES TAB -->
-      <div id="tab-properties" class="tab-content hidden">
-        <div class="section-card">
-          <div class="flex-between mb-4">
-            <h3>🏠 All Properties</h3>
-            <div class="flex gap-2 flex-wrap">
-              <button class="filter-chip active" data-propfilter="all">All</button>
-              <button class="filter-chip" data-propfilter="pending">Pending</button>
-              <button class="filter-chip" data-propfilter="approved">Verified</button>
-              <button class="filter-chip" data-propfilter="unverified">Unverified</button>
-              <button class="filter-chip" data-propfilter="paused">Paused</button>
-            </div>
-          </div>
-          <div id="allPropertiesList" class="table-wrap"><p class="text-slate-500 text-sm">Loading...</p></div>
-          <div id="noAllProperties" class="hidden text-slate-500 text-sm py-4">No properties found.</div>
         </div>
       </div>
 
@@ -272,7 +252,6 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia2dvdmdvaWZncGF6a2FwYXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MTExOTEsImV4cCI6MjEwMzI4NzE5MX0.upcDE6ucde7lsrPfPssWhoK54PNRDW701tkt2H4hP0A';
 
     let supabase, currentUser;
-    let propFilter = 'all';
     let leadFilter = '';
 
     const authView = document.getElementById('authView');
@@ -292,6 +271,7 @@
       };
       return map[status] || 'badge-unverified';
     }
+    function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
     async function waitForSupabase() {
       return new Promise(resolve => {
@@ -300,6 +280,7 @@
       });
     }
 
+    // ─── AUTH ───
     async function checkAdmin() {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
@@ -331,10 +312,11 @@
     function showDashboard() {
       authView.classList.add('hidden'); dashboardView.classList.remove('hidden');
       loadStats(); loadBrokers(); loadPropertyVerifications(); loadReports(); loadTransactions();
-      loadAllProperties(); loadLeads(); loadSettings();
+      loadLeads(); loadSettings();
       document.querySelector('.admin-tab.active')?.click();
     }
 
+    // ─── TABS ───
     function setupTabs() {
       document.querySelectorAll('.admin-tab').forEach(tab => {
         tab.addEventListener('click', function() {
@@ -344,7 +326,6 @@
           document.getElementById(`tab-${this.dataset.tab}`)?.classList.remove('hidden');
           const t = this.dataset.tab;
           if (t === 'brokers') loadBrokers();
-          else if (t === 'properties') loadAllProperties();
           else if (t === 'property-verifications') loadPropertyVerifications();
           else if (t === 'leads') loadLeads();
           else if (t === 'reports') loadReports();
@@ -354,6 +335,7 @@
       });
     }
 
+    // ─── STATS ───
     async function loadStats() {
       try {
         const [b, p, pv, l] = await Promise.all([
@@ -369,6 +351,7 @@
       } catch (e) { console.error(e); }
     }
 
+    // ─── BROKERS ───
     async function loadBrokers() {
       const box = document.getElementById('brokerList');
       const no = document.getElementById('noBrokers');
@@ -380,9 +363,9 @@
         let html = `<table><thead><tr><th>Business</th><th>Email</th><th>Phone</th><th>Verified</th><th>Blocked</th><th>Actions</th></tr></thead><tbody>`;
         data.forEach(b => {
           html += `<tr>
-            <td class="font-medium">${b.business_name || 'Unnamed'}</td>
-            <td>${b.email || '—'}</td>
-            <td>${b.phone || '—'}</td>
+            <td class="font-medium">${esc(b.business_name || 'Unnamed')}</td>
+            <td>${esc(b.email || '—')}</td>
+            <td>${esc(b.phone || '—')}</td>
             <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(b.is_verified?'verified':'unverified')}">${b.is_verified?'verified':'unverified'}</span></td>
             <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(b.is_blocked?'blocked':'active')}">${b.is_blocked?'blocked':'active'}</span></td>
             <td>
@@ -417,6 +400,7 @@
       } catch (e) { alert('Error: ' + e.message); }
     }
 
+    // ─── BROKER DETAIL ───
     async function showBrokerDetail(id) {
       document.getElementById('tab-brokers').classList.add('hidden');
       document.getElementById('brokerDetailView').classList.remove('hidden');
@@ -446,27 +430,27 @@
         document.getElementById('detailPropertyCount').textContent = props?.length || 0;
         document.getElementById('detailProperties').innerHTML = !props?.length
           ? '<p class="text-slate-500 text-sm">No properties.</p>'
-          : `<table><thead><tr><th>Title</th><th>Price</th><th>Type</th><th>Verified</th></tr></thead><tbody>${props.map(p => `<tr><td>${p.title||'—'}</td><td>${formatCurrency(p.price_amount)}</td><td>${p.property_type||'—'}</td><td>${p.is_verified?'✅':'❌'}</td></tr>`).join('')}</tbody></table>`;
+          : `<table><thead><tr><th>Title</th><th>Price</th><th>Type</th><th>Verified</th></tr></thead><tbody>${props.map(p => `<tr><td>${esc(p.title||'—')}</td><td>${formatCurrency(p.price_amount)}</td><td>${esc(p.property_type||'—')}</td><td>${p.is_verified?'✅':'❌'}</td></tr>`).join('')}</tbody></table>`;
 
         const { data: leads } = await supabase.from('lead_requests').select('*').eq('broker_id', b.id).order('created_at', { ascending: false }).limit(20);
         document.getElementById('detailLeads').innerHTML = !leads?.length
           ? '<p class="text-slate-500 text-sm">No leads.</p>'
-          : `<table><thead><tr><th>Visitor</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody>${leads.map(l => `<tr><td>${l.visitor_name||'—'}</td><td><span class="text-xs px-2 py-0.5 rounded-full ${badge(l.lead_type)}">${l.lead_type||'—'}</span></td><td><span class="text-xs px-2 py-0.5 rounded-full ${badge(l.status)}">${l.status}</span></td><td>${formatDate(l.created_at)}</td></tr>`).join('')}</tbody></table>`;
+          : `<table><thead><tr><th>Visitor</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody>${leads.map(l => `<tr><td>${esc(l.visitor_name||'—')}</td><td><span class="text-xs px-2 py-0.5 rounded-full ${badge(l.lead_type)}">${esc(l.lead_type||'—')}</span></td><td><span class="text-xs px-2 py-0.5 rounded-full ${badge(l.status)}">${esc(l.status)}</span></td><td>${formatDate(l.created_at)}</td></tr>`).join('')}</tbody></table>`;
 
         const { data: reviews } = await supabase.from('reviews').select('*').eq('broker_id', b.id).order('created_at', { ascending: false });
         document.getElementById('detailReviews').innerHTML = !reviews?.length
           ? '<p class="text-slate-500 text-sm">No reviews.</p>'
-          : `<table><thead><tr><th>Rating</th><th>Comment</th><th>Date</th></tr></thead><tbody>${reviews.map(r => `<tr><td>${r.rating}⭐</td><td>${r.comment||'—'}</td><td>${formatDate(r.created_at)}</td></tr>`).join('')}</tbody></table>`;
+          : `<table><thead><tr><th>Rating</th><th>Comment</th><th>Date</th></tr></thead><tbody>${reviews.map(r => `<tr><td>${r.rating}⭐</td><td>${esc(r.comment||'—')}</td><td>${formatDate(r.created_at)}</td></tr>`).join('')}</tbody></table>`;
 
         const { data: reps } = await supabase.from('reports').select('*').eq('broker_id', b.id);
         document.getElementById('detailReports').innerHTML = !reps?.length
           ? '<p class="text-slate-500 text-sm">No reports.</p>'
-          : `<table><thead><tr><th>Reason</th><th>Status</th><th>Date</th></tr></thead><tbody>${reps.map(r => `<tr><td>${r.reason}</td><td><span class="text-xs px-2 py-0.5 rounded-full ${badge(r.status)}">${r.status}</span></td><td>${formatDate(r.created_at)}</td></tr>`).join('')}</tbody></table>`;
+          : `<table><thead><tr><th>Reason</th><th>Status</th><th>Date</th></tr></thead><tbody>${reps.map(r => `<tr><td>${esc(r.reason)}</td><td><span class="text-xs px-2 py-0.5 rounded-full ${badge(r.status)}">${esc(r.status)}</span></td><td>${formatDate(r.created_at)}</td></tr>`).join('')}</tbody></table>`;
 
         const { data: txs } = await supabase.from('wallet_transactions').select('*').eq('profile_id', b.id).order('created_at', { ascending: false }).limit(20);
         document.getElementById('detailTransactions').innerHTML = !txs?.length
           ? '<p class="text-slate-500 text-sm">No transactions.</p>'
-          : `<table><thead><tr><th>Amount</th><th>Type</th><th>Date</th></tr></thead><tbody>${txs.map(t => `<tr><td class="${t.amount<0?'text-red-500':'text-emerald-600'} font-medium">${t.amount<0?'':'+'}${Number(t.amount).toLocaleString()} UGX</td><td>${(t.type||'').toUpperCase()}</td><td>${formatDate(t.created_at)}</td></tr>`).join('')}</tbody></table>`;
+          : `<table><thead><tr><th>Amount</th><th>Type</th><th>Date</th></tr></thead><tbody>${txs.map(t => `<tr><td class="${t.amount<0?'text-red-500':'text-emerald-600'} font-medium">${t.amount<0?'':'+'}${Number(t.amount).toLocaleString()} UGX</td><td>${esc((t.type||'').toUpperCase())}</td><td>${formatDate(t.created_at)}</td></tr>`).join('')}</tbody></table>`;
       } catch (e) { console.error(e); }
     }
 
@@ -476,68 +460,7 @@
       loadBrokers();
     });
 
-    async function loadAllProperties() {
-      const box = document.getElementById('allPropertiesList');
-      const no = document.getElementById('noAllProperties');
-      try {
-        const { data, error } = await supabase.from('properties').select(`*, profiles:owner_id (business_name, email)`).order('created_at', { ascending: false });
-        if (error) throw error;
-        let rows = data || [];
-        if (propFilter === 'pending')    rows = rows.filter(r => r.verification_status === 'pending');
-        if (propFilter === 'approved')   rows = rows.filter(r => r.verification_status === 'approved');
-        if (propFilter === 'unverified') rows = rows.filter(r => !r.verification_status || r.verification_status === 'unverified');
-        if (propFilter === 'paused')     rows = rows.filter(r => r.is_paused);
-
-        if (!rows.length) { box.innerHTML = ''; no.classList.remove('hidden'); return; }
-        no.classList.add('hidden');
-
-        let html = `<table><thead><tr><th>Title</th><th>Broker</th><th>Price</th><th>Type</th><th>Verified</th><th>Paused</th><th>Actions</th></tr></thead><tbody>`;
-        rows.forEach(p => {
-          const broker = p.profiles?.business_name || '—';
-          const vLabel = p.is_verified ? 'approved' : (p.verification_status || 'unverified');
-          html += `<tr>
-            <td class="font-medium">${p.title||'Untitled'}</td>
-            <td>${broker}</td>
-            <td>${formatCurrency(p.price_amount)}</td>
-            <td>${p.property_type||'—'}</td>
-            <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(vLabel)}">${vLabel}</span></td>
-            <td>${p.is_paused ? '⏸️' : '▶️'}</td>
-            <td>
-              ${!p.is_verified ? `<button class="btn-sm green verify-prop" data-id="${p.id}">Verify</button>` : `<button class="btn-sm amber unverify-prop" data-id="${p.id}">Unverify</button>`}
-              <button class="btn-sm blue pause-prop" data-id="${p.id}" data-paused="${p.is_paused}">${p.is_paused?'Resume':'Pause'}</button>
-              <button class="btn-sm red del-prop" data-id="${p.id}">Delete</button>
-            </td></tr>`;
-        });
-        html += '</tbody></table>';
-        box.innerHTML = html;
-
-        box.querySelectorAll('.verify-prop').forEach(x => x.onclick = () => adminSetProperty(x.dataset.id, { is_verified:true, verification_status:'approved' }));
-        box.querySelectorAll('.unverify-prop').forEach(x => x.onclick = () => adminSetProperty(x.dataset.id, { is_verified:false, verification_status:'unverified' }));
-        box.querySelectorAll('.pause-prop').forEach(x => x.onclick = () => adminSetProperty(x.dataset.id, { is_paused: x.dataset.paused !== 'true' }));
-        box.querySelectorAll('.del-prop').forEach(x => x.onclick = async () => {
-          if (!confirm('Delete this property permanently?')) return;
-          const { error } = await supabase.from('properties').delete().eq('id', x.dataset.id);
-          if (error) return alert('Error: ' + error.message);
-          loadAllProperties(); loadStats();
-        });
-      } catch (e) { box.innerHTML = '<p class="text-red-500 text-sm">Error loading properties.</p>'; }
-    }
-
-    async function adminSetProperty(id, patch) {
-      const { error } = await supabase.from('properties').update(patch).eq('id', id);
-      if (error) return alert('Error: ' + error.message);
-      loadAllProperties(); loadStats();
-    }
-
-    document.querySelectorAll('[data-propfilter]').forEach(chip => {
-      chip.addEventListener('click', () => {
-        document.querySelectorAll('[data-propfilter]').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        propFilter = chip.dataset.propfilter;
-        loadAllProperties();
-      });
-    });
-
+    // ─── PROPERTY VERIFICATIONS ───
     async function loadPropertyVerifications() {
       const box = document.getElementById('propertyVerificationList');
       const no = document.getElementById('noPropertyVerifications');
@@ -554,9 +477,9 @@
         let html = `<table><thead><tr><th>Property</th><th>Broker</th><th>Type</th><th>Fee paid</th><th>Actions</th></tr></thead><tbody>`;
         data.forEach(r => {
           html += `<tr>
-            <td><div class="font-medium">${r.property?.title||'Unknown'}</div><div class="text-xs text-slate-500">${r.property?.address||''}</div></td>
-            <td>${r.broker?.business_name||'Unknown'}</td>
-            <td>${r.property?.property_type||'—'}</td>
+            <td><div class="font-medium">${esc(r.property?.title||'Unknown')}</div><div class="text-xs text-slate-500">${esc(r.property?.address||'')}</div></td>
+            <td>${esc(r.broker?.business_name||'Unknown')}</td>
+            <td>${esc(r.property?.property_type||'—')}</td>
             <td>${r.fee_paid ? '✅ ' + formatCurrency(r.fee_amount) : '❌'}</td>
             <td>
               <button class="btn-sm blue view-details" data-id="${r.id}">View</button>
@@ -567,22 +490,71 @@
         html += '</tbody></table>';
         box.innerHTML = html;
 
-        box.querySelectorAll('.view-details').forEach(x => x.onclick = async () => {
-          const { data: req } = await supabase.from('property_verification_requests').select('submitted_data, created_at, status, fee_amount, fee_paid').eq('id', x.dataset.id).single();
-          let h = `<div class="detail-field"><span class="label">Status:</span> <span class="value">${req.status}</span></div>
-                   <div class="detail-field"><span class="label">Fee:</span> <span class="value">${req.fee_paid ? formatCurrency(req.fee_amount) + ' (paid)' : 'Not paid'}</span></div>
-                   <div class="detail-field"><span class="label">Submitted:</span> <span class="value">${formatDateTime(req.created_at)}</span></div><hr class="my-2"/>`;
-          Object.entries(req.submitted_data || {}).forEach(([k, v]) => {
-            const isUrl = typeof v === 'string' && /^https?:\/\//.test(v);
-            h += `<div class="detail-field"><span class="label">${k}:</span> <span class="value">${isUrl ? `<a href="${v}" target="_blank" class="text-indigo-600 underline">${v}</a>` : (v || '—')}</span></div>`;
-          });
-          document.getElementById('detailContent').innerHTML = h;
-          document.getElementById('verificationDetailModal').classList.remove('hidden');
-        });
-
+        box.querySelectorAll('.view-details').forEach(x => x.onclick = () => openVerificationDetail(x.dataset.id));
         box.querySelectorAll('.approve-prop').forEach(x => x.onclick = () => handlePropertyVerification(x.dataset.id, x.dataset.prop, 'approved'));
         box.querySelectorAll('.reject-prop').forEach(x => x.onclick = () => handlePropertyVerification(x.dataset.id, x.dataset.prop, 'rejected'));
       } catch (e) { box.innerHTML = '<p class="text-red-500 text-sm">Error loading.</p>'; }
+    }
+
+    // ─── Verification Detail Modal with inline Cloudinary images ───
+    async function openVerificationDetail(reqId) {
+      const { data: req, error } = await supabase
+        .from('property_verification_requests')
+        .select('submitted_data, created_at, status, fee_amount, fee_paid, property:property_id (title,address,media_urls)')
+        .eq('id', reqId).single();
+      if (error || !req) { alert('Could not load details.'); return; }
+
+      const isImage = (v) =>
+        typeof v === 'string' &&
+        (/res\.cloudinary\.com/.test(v) ||
+         /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(v));
+      const isUrl = (v) => typeof v === 'string' && /^https?:\/\//.test(v);
+
+      let h = `
+        <div class="detail-field"><span class="label">Property:</span> <span class="value">${esc(req.property?.title || '—')}</span></div>
+        <div class="detail-field"><span class="label">Address:</span> <span class="value">${esc(req.property?.address || '—')}</span></div>
+        <div class="detail-field"><span class="label">Status:</span> <span class="value">${esc(req.status)}</span></div>
+        <div class="detail-field"><span class="label">Fee paid:</span> <span class="value">${req.fee_paid ? formatCurrency(req.fee_amount) + ' (paid)' : 'Not paid'}</span></div>
+        <div class="detail-field"><span class="label">Submitted:</span> <span class="value">${formatDateTime(req.created_at)}</span></div>
+        <hr class="my-3"/>
+        <h4 class="font-semibold mb-2">📋 Submitted Data</h4>
+      `;
+
+      // If property has its own images, show them first
+      const propImgs = Array.isArray(req.property?.media_urls) ? req.property.media_urls : [];
+      if (propImgs.length) {
+        h += `<div class="detail-field"><span class="label">Property Images:</span><div class="mt-1">`;
+        propImgs.forEach(url => {
+          h += `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="property" style="max-width:180px; border-radius:0.5rem; margin:0.25rem; display:inline-block; border:1px solid #e2e8f0;"/></a>`;
+        });
+        h += `</div></div>`;
+      }
+
+      Object.entries(req.submitted_data || {}).forEach(([k, v]) => {
+        const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+        let display;
+        if (isImage(v)) {
+          display = `
+            <div class="mt-1">
+              <a href="${v}" target="_blank" rel="noopener">
+                <img src="${v}" alt="${esc(label)}" style="max-width:100%; max-height:280px; border-radius:0.75rem; border:1px solid #e2e8f0; cursor:zoom-in; display:block;"/>
+              </a>
+              <a href="${v}" target="_blank" rel="noopener" class="text-xs text-indigo-600 underline mt-1 inline-block">Open full size ↗</a>
+            </div>`;
+        } else if (isUrl(v)) {
+          display = `<a href="${v}" target="_blank" rel="noopener" class="text-indigo-600 underline break-all">${esc(v)}</a>`;
+        } else if (Array.isArray(v)) {
+          display = v.map(item => isImage(item)
+            ? `<a href="${item}" target="_blank" rel="noopener"><img src="${item}" style="max-width:180px; border-radius:0.5rem; margin:0.25rem; display:inline-block; border:1px solid #e2e8f0;"/></a>`
+            : esc(item)).join(' ');
+        } else {
+          display = esc(v || '—');
+        }
+        h += `<div class="detail-field"><span class="label">${esc(label)}:</span><span class="value">${display}</span></div>`;
+      });
+
+      document.getElementById('detailContent').innerHTML = h;
+      document.getElementById('verificationDetailModal').classList.remove('hidden');
     }
 
     async function handlePropertyVerification(reqId, propId, status) {
@@ -593,16 +565,18 @@
         }).eq('id', reqId);
         if (error) throw error;
         if (propId) {
-          await supabase.from('properties').update({
+          const { error: pErr } = await supabase.from('properties').update({
             is_verified: status === 'approved',
             verification_status: status
           }).eq('id', propId);
+          if (pErr) throw pErr;
         }
         alert(`✅ Verification ${status}.`);
-        loadPropertyVerifications(); loadStats(); loadAllProperties();
+        loadPropertyVerifications(); loadStats();
       } catch (e) { alert('Error: ' + e.message); }
     }
 
+    // ─── LEADS ───
     async function loadLeads() {
       const box = document.getElementById('leadsList');
       const no = document.getElementById('noLeads');
@@ -621,12 +595,12 @@
           const age = Math.floor((Date.now() - new Date(l.created_at).getTime()) / 86400000);
           const ageClass = age >= 30 ? 'text-red-600 font-bold' : age >= 25 ? 'text-amber-600' : 'text-slate-500';
           html += `<tr>
-            <td>${l.property?.title || '—'}</td>
-            <td>${l.broker?.business_name || '—'}</td>
-            <td>${l.visitor_name || '—'}</td>
-            <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(l.lead_type)}">${l.lead_type||'—'}</span></td>
+            <td>${esc(l.property?.title || '—')}</td>
+            <td>${esc(l.broker?.business_name || '—')}</td>
+            <td>${esc(l.visitor_name || '—')}</td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(l.lead_type)}">${esc(l.lead_type||'—')}</span></td>
             <td>${formatCurrency(l.cost || 0)}</td>
-            <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(l.status)}">${l.status}</span></td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(l.status)}">${esc(l.status)}</span></td>
             <td class="${ageClass}">${formatDate(l.created_at)} (${age}d)</td>
             <td>${l.status === 'pending' ? `<button class="btn-sm red del-lead" data-id="${l.id}">Delete</button>` : ''}</td>
           </tr>`;
@@ -677,6 +651,7 @@
       } catch (e) { st.textContent = '❌ ' + e.message; st.className = 'mt-3 text-sm text-red-600'; }
     });
 
+    // ─── REPORTS ───
     async function loadReports() {
       const box = document.getElementById('reportList');
       const no = document.getElementById('noReports');
@@ -690,10 +665,10 @@
         let html = `<table><thead><tr><th>Reporter</th><th>Broker</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>`;
         data.forEach(r => {
           html += `<tr>
-            <td>${r.reporter?.business_name || r.reporter?.email || 'Anonymous'}</td>
-            <td>${r.broker?.business_name || 'Unknown'}</td>
-            <td>${r.reason}</td>
-            <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(r.status)}">${r.status}</span></td>
+            <td>${esc(r.reporter?.business_name || r.reporter?.email || 'Anonymous')}</td>
+            <td>${esc(r.broker?.business_name || 'Unknown')}</td>
+            <td>${esc(r.reason)}</td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(r.status)}">${esc(r.status)}</span></td>
             <td>${formatDate(r.created_at)}</td>
             <td>${r.status === 'pending' ? `<button class="btn-sm green resolve-report" data-id="${r.id}">Resolve</button><button class="btn-sm red dismiss-report" data-id="${r.id}">Dismiss</button>` : ''}</td>
           </tr>`;
@@ -712,6 +687,7 @@
       } catch (e) { box.innerHTML = '<p class="text-red-500 text-sm">Error loading reports.</p>'; }
     }
 
+    // ─── TRANSACTIONS ───
     async function loadTransactions() {
       const box = document.getElementById('transactionList');
       const no = document.getElementById('noTransactions');
@@ -727,10 +703,10 @@
         data.forEach(t => {
           const color = t.amount < 0 ? 'text-red-500' : 'text-emerald-600';
           html += `<tr>
-            <td>${t.profiles?.business_name || t.profiles?.email || 'Unknown'}</td>
+            <td>${esc(t.profiles?.business_name || t.profiles?.email || 'Unknown')}</td>
             <td class="${color} font-medium">${t.amount < 0 ? '' : '+'}${Number(t.amount).toLocaleString()} UGX</td>
-            <td>${(t.type||'').replace('_',' ').toUpperCase()}</td>
-            <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(t.status || 'active')}">${t.status || '—'}</span></td>
+            <td>${esc((t.type||'').replace('_',' ').toUpperCase())}</td>
+            <td><span class="text-xs px-2 py-0.5 rounded-full ${badge(t.status || 'active')}">${esc(t.status || '—')}</span></td>
             <td>${formatDate(t.created_at)}</td>
           </tr>`;
         });
@@ -739,6 +715,7 @@
       } catch (e) { box.innerHTML = '<p class="text-red-500 text-sm">Error loading transactions.</p>'; }
     }
 
+    // ─── SETTINGS ───
     async function loadSettings() {
       try {
         const { data, error } = await supabase.from('platform_settings').select('key,value');
@@ -773,6 +750,7 @@
       if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
     });
 
+    // ─── INIT ───
     async function init() {
       await waitForSupabase();
       if (!window.supabase) { alert('Supabase failed to load.'); return; }
@@ -788,7 +766,6 @@
         loadStats();
         const t = document.querySelector('.admin-tab.active')?.dataset.tab;
         if (t === 'brokers') loadBrokers();
-        else if (t === 'properties') loadAllProperties();
         else if (t === 'property-verifications') loadPropertyVerifications();
         else if (t === 'leads') loadLeads();
         else if (t === 'reports') loadReports();
