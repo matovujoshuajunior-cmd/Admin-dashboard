@@ -461,40 +461,98 @@
     });
 
     // ─── PROPERTY VERIFICATIONS ───
-    async function loadPropertyVerifications() {
-      const box = document.getElementById('propertyVerificationList');
-      const no = document.getElementById('noPropertyVerifications');
-      try {
-        const { data, error } = await supabase
-          .from('property_verification_requests')
-          .select(`*, property:property_id (id,title,price_amount,property_type,address,media_urls), broker:broker_id (id,business_name,email,phone)`)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        if (!data?.length) { box.innerHTML = ''; no.classList.remove('hidden'); return; }
-        no.classList.add('hidden');
+   async function openVerificationDetail(reqId) {
+  try {
+    // 1. Fetch the verification request alone
+    const { data: req, error: reqErr } = await supabase
+      .from('property_verification_requests')
+      .select('*')
+      .eq('id', reqId)
+      .single();
 
-        let html = `<table><thead><tr><th>Property</th><th>Broker</th><th>Type</th><th>Fee paid</th><th>Actions</th></tr></thead><tbody>`;
-        data.forEach(r => {
-          html += `<tr>
-            <td><div class="font-medium">${esc(r.property?.title||'Unknown')}</div><div class="text-xs text-slate-500">${esc(r.property?.address||'')}</div></td>
-            <td>${esc(r.broker?.business_name||'Unknown')}</td>
-            <td>${esc(r.property?.property_type||'—')}</td>
-            <td>${r.fee_paid ? '✅ ' + formatCurrency(r.fee_amount) : '❌'}</td>
-            <td>
-              <button class="btn-sm blue view-details" data-id="${r.id}">View</button>
-              <button class="btn-sm green approve-prop" data-id="${r.id}" data-prop="${r.property?.id}">Approve</button>
-              <button class="btn-sm red reject-prop" data-id="${r.id}" data-prop="${r.property?.id}">Reject</button>
-            </td></tr>`;
-        });
-        html += '</tbody></table>';
-        box.innerHTML = html;
-
-        box.querySelectorAll('.view-details').forEach(x => x.onclick = () => openVerificationDetail(x.dataset.id));
-        box.querySelectorAll('.approve-prop').forEach(x => x.onclick = () => handlePropertyVerification(x.dataset.id, x.dataset.prop, 'approved'));
-        box.querySelectorAll('.reject-prop').forEach(x => x.onclick = () => handlePropertyVerification(x.dataset.id, x.dataset.prop, 'rejected'));
-      } catch (e) { box.innerHTML = '<p class="text-red-500 text-sm">Error loading.</p>'; }
+    if (reqErr) {
+      console.error('Verification fetch error:', reqErr);
+      alert('Could not load details: ' + reqErr.message);
+      return;
     }
+    if (!req) { alert('Verification request not found.'); return; }
+
+    // 2. Fetch property separately (no join)
+    let property = null;
+    if (req.property_id) {
+      const { data: p, error: pErr } = await supabase
+        .from('properties')
+        .select('title, address, media_urls')
+        .eq('id', req.property_id)
+        .single();
+      if (pErr) console.warn('Property fetch warn:', pErr.message);
+      property = p;
+    }
+
+    // 3. Render
+    const isImage = (v) =>
+      typeof v === 'string' &&
+      (/res\.cloudinary\.com/.test(v) ||
+       /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(v));
+    const isUrl = (v) => typeof v === 'string' && /^https?:\/\//.test(v);
+
+    let h = `
+      <div class="detail-field"><span class="label">Property:</span> <span class="value">${esc(property?.title || '—')}</span></div>
+      <div class="detail-field"><span class="label">Address:</span> <span class="value">${esc(property?.address || '—')}</span></div>
+      <div class="detail-field"><span class="label">Status:</span> <span class="value">${esc(req.status || '—')}</span></div>
+      <div class="detail-field"><span class="label">Fee paid:</span> <span class="value">${req.fee_paid ? formatCurrency(req.fee_amount) + ' (paid)' : 'Not paid'}</span></div>
+      <div class="detail-field"><span class="label">Submitted:</span> <span class="value">${formatDateTime(req.created_at)}</span></div>
+      <hr class="my-3"/>
+      <h4 class="font-semibold mb-2">📋 Submitted Data</h4>
+    `;
+
+    // Property images first
+    const propImgs = Array.isArray(property?.media_urls) ? property.media_urls : [];
+    if (propImgs.length) {
+      h += `<div class="detail-field"><span class="label">Property Images:</span><div class="mt-1">`;
+      propImgs.forEach(url => {
+        h += `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="property" style="max-width:180px; border-radius:0.5rem; margin:0.25rem; display:inline-block; border:1px solid #e2e8f0;"/></a>`;
+      });
+      h += `</div></div>`;
+    }
+
+    const data = req.submitted_data || {};
+    const keys = Object.keys(data);
+    if (keys.length === 0) {
+      h += `<p class="text-slate-500 text-sm">No submitted data attached.</p>`;
+    } else {
+      keys.forEach(k => {
+        const v = data[k];
+        const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+        let display;
+        if (isImage(v)) {
+          display = `
+            <div class="mt-1">
+              <a href="${v}" target="_blank" rel="noopener">
+                <img src="${v}" alt="${esc(label)}" style="max-width:100%; max-height:280px; border-radius:0.75rem; border:1px solid #e2e8f0; cursor:zoom-in; display:block;"/>
+              </a>
+              <a href="${v}" target="_blank" rel="noopener" class="text-xs text-indigo-600 underline mt-1 inline-block">Open full size ↗</a>
+            </div>`;
+        } else if (isUrl(v)) {
+          display = `<a href="${v}" target="_blank" rel="noopener" class="text-indigo-600 underline break-all">${esc(v)}</a>`;
+        } else if (Array.isArray(v)) {
+          display = v.map(item => isImage(item)
+            ? `<a href="${item}" target="_blank" rel="noopener"><img src="${item}" style="max-width:180px; border-radius:0.5rem; margin:0.25rem; display:inline-block; border:1px solid #e2e8f0;"/></a>`
+            : esc(item)).join(' ');
+        } else {
+          display = esc(v || '—');
+        }
+        h += `<div class="detail-field"><span class="label">${esc(label)}:</span><span class="value">${display}</span></div>`;
+      });
+    }
+
+    document.getElementById('detailContent').innerHTML = h;
+    document.getElementById('verificationDetailModal').classList.remove('hidden');
+  } catch (err) {
+    console.error('openVerificationDetail fatal:', err);
+    alert('Unexpected error: ' + err.message);
+  }
+}
 
     // ─── Verification Detail Modal with inline Cloudinary images ───
     async function openVerificationDetail(reqId) {
